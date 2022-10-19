@@ -1,12 +1,10 @@
-import 'package:apex_api/src/typedefs.dart';
+import 'package:apex_api/apex_api.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
 
 import '../preferences/storage_util.dart';
 
-enum Method {
-  post,
-  get
-}
+enum Method { post, get }
 
 abstract class Request {
   final String? handlerUrl;
@@ -15,44 +13,56 @@ abstract class Request {
   final bool needCredentials;
   final int action;
   final bool? encrypt;
+  final bool isEmpty;
 
   Request(
     this.action, {
+    this.isEmpty = false,
     this.encrypt,
     this.groupName,
     this.handlerUrl,
     this.isPublic = false,
     this.needCredentials = false,
-    this.method = Method.post,
   });
 
-  Future<Map<String, dynamic>> get json;
+  Future<String> get zip async =>
+      '{$action => $groupName => $isPublic => ${await toJson()}}';
 
-  /// Defines The request method which can be [Method.POST] or [Method.GET]
-  Method method;
+  Future<Json> get json;
+
+  Future<Json> get responseMock async => {};
+
+  final Json _finalJson = {};
+
+  /// Defines The request method which can be [Method.post] or [Method.get]
+  Method get method => Method.post;
 
   Future<bool> has(String key) async {
-    return (await json).containsKey(key);
+    return _finalJson.containsKey(key);
   }
 
   /// This adds an entry with [key] and [value] into [_params] map
   void addParam({required String key, required dynamic value}) async {
-    (await json)[key] = value;
+    _finalJson[key] = value;
   }
 
   /// This add a map [values] into [_params] map
-  void addParams(Map<String, dynamic> values) async {
-    (await json).addAll(values);
+  void addParams(Json values) async {
+    _finalJson.addAll(values);
+  }
+
+  bool containsKey(String key) {
+    return _finalJson.containsKey(key);
   }
 
   /// Removes a param with [key] key from [_params]
   void removeParam({required String key}) async {
-    (await json).remove(key);
+    _finalJson.remove(key);
   }
 
   /// Clears [_params] map
   void clearParams() async {
-    (await json).clear();
+    _finalJson.clear();
   }
 
   /// Convert params map to query for using in requests with [Method.GET] method
@@ -60,7 +70,7 @@ abstract class Request {
   /// Returns query format of [_params] something like this `?firstKey=firstValue&secondKey=secondValue`
   Future<String> params2Query() async {
     String q = "?";
-    (await json).forEach((key, value) {
+    _finalJson.forEach((key, value) {
       q += "$key=$value&";
     });
     return q;
@@ -69,38 +79,102 @@ abstract class Request {
   @nonVirtual
   Future<Json> toJson() async {
     Json finalResult;
-    finalResult = {
-      'action': action,
-      if (groupName != null && isPublic) 'group_name': groupName,
-    }..addAll(await json);
+    finalResult = !isEmpty
+        ? ({
+            'action': action,
+            if (groupName != null && isPublic) 'group_name': groupName,
+          }
+          ..addAll(await json)
+          ..addAll(_finalJson))
+        : {};
 
-    final token = StorageUtil.getString('apex_api_token');
-    if (!finalResult.containsKey('token')) {
-      if (token != null) finalResult.addAll({'token': token});
-    } else {
-      if (token != null) finalResult['token'] = token;
+    if (!isEmpty && ![1001, 1002, 1003, 1004].contains(action)) {
+      final token = StorageUtil.getString('apex_api_token');
+      if (!finalResult.containsKey('token')) {
+        if (token != null) finalResult.addAll({'token': token});
+      } else {
+        if (token != null) finalResult['token'] = token;
+      }
     }
 
     return finalResult;
   }
+
+  Future<Res> send<Res extends Response>(
+    BuildContext context, {
+    bool? showProgress,
+    bool? showRetry,
+    VoidCallback? onStart,
+    OnSuccess<Res>? onSuccess,
+    OnConnectionError? onError,
+    bool ignoreExpireTime = false,
+  }) {
+    return context.api.request<Res>(this,
+        showProgress: showProgress,
+        showRetry: showRetry,
+        onStart: onStart,
+        onSuccess: onSuccess,
+        onError: onError);
+  }
 }
 
 class SimpleRequest extends Request {
-  final Map<String, dynamic>? data;
+  final Json? data;
+  final Json? responseMockData;
 
-  SimpleRequest(int action, {bool isPublic = false, this.data})
-      : super(action, isPublic: isPublic);
+  factory SimpleRequest.empty({bool? encrypt, Json? responseMockData}) =>
+      SimpleRequest(0, isEmpty: true, encrypt: encrypt, responseMockData: responseMockData);
+
+  SimpleRequest(
+    int action, {
+    this.data,
+    this.responseMockData,
+    bool isPublic = false,
+    bool isEmpty = false,
+    String? groupName,
+    String? handlerUrl,
+    bool needCredentials = false,
+    bool? encrypt,
+  }) : super(
+          action,
+          groupName: groupName,
+          isEmpty: isEmpty,
+          needCredentials: needCredentials,
+          isPublic: isPublic,
+          encrypt: encrypt,
+          handlerUrl: handlerUrl,
+        );
 
   @override
-  Future<Map<String, dynamic>> get json async => data ?? {};
+  Future<Json> get json async => data ?? {};
+
+  @override
+  Future<Json> get responseMock async => responseMockData ?? {};
+
+  Future<Res> make<Res extends Response>(
+    BuildContext context, {
+    bool? showProgress,
+    bool? showRetry,
+    VoidCallback? onStart,
+    OnSuccess<Res>? onSuccess,
+    OnConnectionError? onError,
+    bool ignoreExpireTime = false,
+  }) =>
+      context.api.request(this,
+          onSuccess: onSuccess,
+          showProgress: showProgress,
+          onError: onError,
+          onStart: onStart,
+          showRetry: showRetry,
+          ignoreExpireTime: ignoreExpireTime);
 }
 
 class JoinGroupRequest extends Request {
-  final Map<String, dynamic>? data;
+  final Json? data;
 
   JoinGroupRequest(String groupName, {this.data})
       : super(2, isPublic: true, groupName: groupName);
 
   @override
-  Future<Map<String, dynamic>> get json async => data ?? {};
+  Future<Json> get json async => data ?? {};
 }

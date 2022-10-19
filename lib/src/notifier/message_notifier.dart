@@ -1,6 +1,6 @@
 import 'package:flutter/foundation.dart';
 
-typedef MessageNotifierCallback = void Function(String tag, [dynamic message]);
+typedef MessageNotifierCallback = void Function(dynamic tag, [dynamic message]);
 
 class MessageNotifier<T extends dynamic> {
   int _count = 0;
@@ -203,7 +203,7 @@ class MessageNotifier<T extends dynamic> {
   @protected
   @visibleForTesting
   @pragma('vm:notify-debugger-on-exception')
-  void notifyListeners(String tag, [T? message]) {
+  void notifyListeners(dynamic tag, [T? message]) {
     assert(_debugAssertNotDisposed());
     if (_count == 0) {
       return;
@@ -286,7 +286,7 @@ class MessageNotifier<T extends dynamic> {
 }
 
 class SimpleOuterNotifier<T extends dynamic> extends MessageNotifier<T> {
-  void notifyAll(String tag, {T? message}) {
+  void notifyAll(dynamic tag, {T? message}) {
     notifyListeners(tag, message);
   }
 }

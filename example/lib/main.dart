@@ -1,0 +1,144 @@
+import 'package:flutter/material.dart';
+import 'package:apex_api/apex_api.dart';
+
+import 'constants.dart';
+import 'models.dart';
+
+// class MyHttpOverrides extends HttpOverrides {
+//   @override
+//   HttpClient createHttpClient(SecurityContext? context) {
+//     return super.createHttpClient(context)
+//       ..badCertificateCallback =
+//           (X509Certificate cert, String host, int port) => true;
+//   }
+// }
+
+void main() {
+  // HttpOverrides.global = MyHttpOverrides();
+  ApexApi.init();
+
+  runApp(
+    RootRestorationScope(
+      restorationId: 'root',
+      child: MyApp(),
+    ),
+  );
+}
+
+class MyApp extends StatelessWidget {
+  final server = Api(
+      config: ApiConfig(
+        Constants.serverUrl,
+        namespace: Constants.namespace,
+        useSocket: true,
+        publicVersion: Constants.publicVersion,
+        privateVersion: Constants.privateVersion,
+        webKey: Constants.webKey,
+        androidKey: Constants.androidKey,
+        iosKey: Constants.iOSKey,
+        uploadHandlerUrl: Constants.uploadUrl,
+        debugMode: false,
+        options: OptionBuilder()
+          ..disableReconnection()
+          ..disableForceNewConnection()
+          ..disableForceNew()
+          ..disableAutoConnect(),
+      ),
+      responseModels: Constants.responseModels);
+
+  MyApp({Key? key}) : super(key: key);
+
+  // This widget is the root of your application.
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      builder: (context, child) {
+        final navigatorKey = child!.key as GlobalKey<NavigatorState>;
+        return ServerWrapper(
+          navKey: navigatorKey,
+          api: server,
+          progressBuilder: (BuildContext context) {
+            return const Material(
+              type: MaterialType.transparency,
+              child: Center(
+                  child: Text(
+                    'Loading',
+                    style: TextStyle(color: Colors.black),
+                  )),
+            );
+          },
+          retryBuilder: (BuildContext context, VoidCallback onRetry, VoidCallback onClose) {
+            return ElevatedButton(onPressed: onRetry, child: const Text('hi'));
+          },
+          loginStepManager: (LoginStep step) {
+            print(step);
+          },
+          child: child,
+        );
+      },
+      title: 'Flutter Demo',
+      theme: ThemeData(
+        primarySwatch: Colors.blue,
+      ),
+      home: const MyHomePage(),
+    );
+  }
+}
+
+class MyHomePage extends StatefulWidget {
+  const MyHomePage({Key? key}) : super(key: key);
+
+  @override
+  State<MyHomePage> createState() => _MyHomePageState();
+}
+
+class _MyHomePageState extends State<MyHomePage> {
+  int _counter = 0;
+
+  void _incrementCounter() {
+    setState(() {
+      _counter++;
+    });
+    ServerWidget.of(context, build: false)
+        .request<GetCurrenciesResponse>(GetCurrenciesRequest(), showProgress: true)
+        .then((value) {
+          print('got the message');
+    }).catchError((e) {
+      print(e);
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: MessageNotifierBuilder(
+          notifier:
+              ServerWidget.of(context, build: false).connector as ApexSocket,
+          builder: (context, value) {
+            return Text('${(value as ApexSocket).status}');
+          },
+        ),
+      ),
+      body: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: <Widget>[
+            const Text(
+              'You have pushed the button this many times:',
+            ),
+            Text(
+              '$_counter',
+              style: Theme.of(context).textTheme.headline4,
+            ),
+          ],
+        ),
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: _incrementCounter,
+        tooltip: 'Increment',
+        child: const Icon(Icons.add),
+      ),
+    );
+  }
+}

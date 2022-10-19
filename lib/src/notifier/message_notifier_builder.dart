@@ -6,11 +6,13 @@ import 'message_notifier.dart';
 class MessageNotifierBuilder extends StatefulWidget {
   final MessageNotifier notifier;
   final NotifierWidgetBuilder builder;
-  final List<String> tags;
+
+  // if null => listens to all tags
+  final List<dynamic>? tags;
 
   const MessageNotifierBuilder({
     Key? key,
-    required this.tags,
+    this.tags,
     required this.notifier,
     required this.builder,
   }) : super(key: key);
@@ -32,9 +34,13 @@ class MessageNotifierBuilderState extends State<MessageNotifierBuilder> {
     super.dispose();
   }
 
-  void _listener(String tag, [dynamic message]) {
-    if(widget.tags.contains(tag)) {
+  void _listener(dynamic tag, [dynamic message]) {
+    if (widget.tags == null) {
       if (mounted) setState(() {});
+    } else {
+      if (widget.tags!.contains(tag)) {
+        if (mounted) setState(() {});
+      }
     }
   }
 

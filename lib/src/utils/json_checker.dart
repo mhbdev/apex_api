@@ -1,7 +1,15 @@
+import 'package:apex_api/apex_api.dart';
+import 'package:apex_api/apex_api.dart';
+import 'package:apex_api/apex_api.dart';
+import 'package:apex_api/apex_api.dart';
+import 'package:apex_api/apex_api.dart';
+import 'package:apex_api/apex_api.dart';
+import 'package:apex_api/apex_api.dart';
+import 'package:apex_api/apex_api.dart';
 import 'package:timezone/timezone.dart' as tz;
 
 class JsonChecker {
-  static String? optString(Map<String, dynamic>? data, String key,
+  static String? optString(Json? data, String key,
       {String? defValue = ''}) {
     if (data == null) return defValue;
     if (data.containsKey(key)) {
@@ -12,7 +20,7 @@ class JsonChecker {
     return defValue;
   }
 
-  static RegExp? optRegex(Map<String, dynamic>? data, String key,
+  static RegExp? optRegex(Json? data, String key,
       {RegExp? defValue}) {
     if (data == null) return defValue;
     if (data.containsKey(key)) {
@@ -23,7 +31,7 @@ class JsonChecker {
     return defValue;
   }
 
-  static int optInt(Map<String, dynamic>? data, String key,
+  static int optInt(Json? data, String key,
       {int defValue = 0}) {
     if (data == null) return defValue;
     if (data.containsKey(key)) {
@@ -34,7 +42,7 @@ class JsonChecker {
     return defValue;
   }
 
-  static Uri? optUri(Map<String, dynamic>? data, String key, {Uri? defValue}) {
+  static Uri? optUri(Json? data, String key, {Uri? defValue}) {
     if (data == null) return defValue;
     if (data.containsKey(key)) {
       return Uri.tryParse(data[key].toString()) ?? defValue;
@@ -42,7 +50,7 @@ class JsonChecker {
     return defValue;
   }
 
-  static num optNum(Map<String, dynamic>? data, String key,
+  static num optNum(Json? data, String key,
       {num defValue = 0}) {
     if (data == null) return defValue;
     if (data.containsKey(key)) {
@@ -53,7 +61,7 @@ class JsonChecker {
     return defValue;
   }
 
-  static double optDouble(Map<String, dynamic>? data, String key,
+  static double optDouble(Json? data, String key,
       {double defValue = 0.0}) {
     if (data == null) return defValue;
     if (data.containsKey(key)) {
@@ -64,7 +72,7 @@ class JsonChecker {
     return defValue;
   }
 
-  static DateTime? optDate(Map<String, dynamic>? data, String key,
+  static DateTime? optDate(Json? data, String key,
       {DateTime? defValue}) {
     if (data == null) return defValue;
     if (data.containsKey(key)) {
@@ -80,7 +88,7 @@ class JsonChecker {
     return defValue;
   }
 
-  static bool optBool(Map<String, dynamic>? data, String key,
+  static bool optBool(Json? data, String key,
       {bool defValue = false}) {
     if (data == null) return defValue;
     if (data.containsKey(key)) {

@@ -1,8 +1,9 @@
 import 'dart:async';
 
+import 'package:apex_api/src/notifier/message_notifier.dart';
 import 'package:flutter/foundation.dart';
 
-class StreamSocket<T> extends ChangeNotifier {
+class StreamSocket<T> extends MessageNotifier {
   final _socketResponse = StreamController<T?>.broadcast(sync: true);
 
   StreamController<T?> get controller => _socketResponse;
@@ -23,11 +24,8 @@ class StreamSocket<T> extends ChangeNotifier {
 
   void close() async {
     if (!_socketResponse.isClosed) {
-      notifyListeners();
+      notifyListeners('closed');
       await _socketResponse.close();
-      // if(!hasListeners) {
-      //   dispose();
-      // }
     }
   }
 }

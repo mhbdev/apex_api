@@ -1,8 +1,9 @@
+import 'package:apex_api/src/typedefs.dart';
 import 'package:flutter/material.dart';
 
 class ChangeNotifierBuilder extends StatefulWidget {
   final ChangeNotifier notifier;
-  final WidgetBuilder builder;
+  final ChangeNotifierWidgetBuilder builder;
 
   const ChangeNotifierBuilder({Key? key, required this.notifier, required this.builder}) : super(key: key);
 
@@ -29,6 +30,6 @@ class ChangeNotifierBuilderState extends State<ChangeNotifierBuilder> {
 
   @override
   Widget build(BuildContext context) {
-    return widget.builder(context);
+    return widget.builder(context, widget.notifier);
   }
 }
