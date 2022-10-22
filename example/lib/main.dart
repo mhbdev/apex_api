@@ -1,9 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:apex_api/apex_api.dart';
 
-import 'constants.dart';
-import 'models.dart';
-
 // class MyHttpOverrides extends HttpOverrides {
 //   @override
 //   HttpClient createHttpClient(SecurityContext? context) {
@@ -26,25 +23,6 @@ void main() {
 }
 
 class MyApp extends StatelessWidget {
-  final server = Api(
-      config: ApiConfig(
-        Constants.serverUrl,
-        namespace: Constants.namespace,
-        useSocket: true,
-        publicVersion: Constants.publicVersion,
-        privateVersion: Constants.privateVersion,
-        webKey: Constants.webKey,
-        androidKey: Constants.androidKey,
-        iosKey: Constants.iOSKey,
-        uploadHandlerUrl: Constants.uploadUrl,
-        debugMode: false,
-        options: OptionBuilder()
-          ..disableReconnection()
-          ..disableForceNewConnection()
-          ..disableForceNew()
-          ..disableAutoConnect(),
-      ),
-      responseModels: Constants.responseModels);
 
   MyApp({Key? key}) : super(key: key);
 
@@ -54,27 +32,7 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       builder: (context, child) {
         final navigatorKey = child!.key as GlobalKey<NavigatorState>;
-        return ServerWrapper(
-          navKey: navigatorKey,
-          api: server,
-          progressBuilder: (BuildContext context) {
-            return const Material(
-              type: MaterialType.transparency,
-              child: Center(
-                  child: Text(
-                    'Loading',
-                    style: TextStyle(color: Colors.black),
-                  )),
-            );
-          },
-          retryBuilder: (BuildContext context, VoidCallback onRetry, VoidCallback onClose) {
-            return ElevatedButton(onPressed: onRetry, child: const Text('hi'));
-          },
-          loginStepManager: (LoginStep step) {
-            print(step);
-          },
-          child: child,
-        );
+        return const MyHomePage();
       },
       title: 'Flutter Demo',
       theme: ThemeData(
@@ -98,13 +56,6 @@ class _MyHomePageState extends State<MyHomePage> {
   void _incrementCounter() {
     setState(() {
       _counter++;
-    });
-    ServerWidget.of(context, build: false)
-        .request<GetCurrenciesResponse>(GetCurrenciesRequest(), showProgress: true)
-        .then((value) {
-          print('got the message');
-    }).catchError((e) {
-      print(e);
     });
   }
 

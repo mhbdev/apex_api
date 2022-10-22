@@ -9,8 +9,7 @@ import 'package:apex_api/apex_api.dart';
 import 'package:timezone/timezone.dart' as tz;
 
 class JsonChecker {
-  static String? optString(Json? data, String key,
-      {String? defValue = ''}) {
+  static String? optString(Json? data, String key, {String? defValue = ''}) {
     if (data == null) return defValue;
     if (data.containsKey(key)) {
       return data[key] != null
@@ -20,8 +19,7 @@ class JsonChecker {
     return defValue;
   }
 
-  static RegExp? optRegex(Json? data, String key,
-      {RegExp? defValue}) {
+  static RegExp? optRegex(Json? data, String key, {RegExp? defValue}) {
     if (data == null) return defValue;
     if (data.containsKey(key)) {
       return data[key] != null
@@ -31,8 +29,7 @@ class JsonChecker {
     return defValue;
   }
 
-  static int optInt(Json? data, String key,
-      {int defValue = 0}) {
+  static int optInt(Json? data, String key, {int defValue = 0}) {
     if (data == null) return defValue;
     if (data.containsKey(key)) {
       return data[key] != null
@@ -50,8 +47,7 @@ class JsonChecker {
     return defValue;
   }
 
-  static num optNum(Json? data, String key,
-      {num defValue = 0}) {
+  static num optNum(Json? data, String key, {num defValue = 0}) {
     if (data == null) return defValue;
     if (data.containsKey(key)) {
       return data[key] != null
@@ -61,8 +57,7 @@ class JsonChecker {
     return defValue;
   }
 
-  static double optDouble(Json? data, String key,
-      {double defValue = 0.0}) {
+  static double optDouble(Json? data, String key, {double defValue = 0.0}) {
     if (data == null) return defValue;
     if (data.containsKey(key)) {
       return data[key] != null
@@ -72,24 +67,23 @@ class JsonChecker {
     return defValue;
   }
 
-  static DateTime? optDate(Json? data, String key,
-      {DateTime? defValue}) {
+  static DateTime? optDate(Json? data, String key, {DateTime? defValue}) {
     if (data == null) return defValue;
     if (data.containsKey(key)) {
       if (data[key] == null) {
         return defValue;
       }
 
-      return (DateTime.tryParse(data[key].toString() +
-                  tz.getLocation('Asia/Tehran').currentTimeZone.abbreviation) ??
+      return (DateTime.tryParse(data[key].toString()
+          // + tz.getLocation('Asia/Tehran').currentTimeZone.abbreviation
+      ) ??
               (defValue ?? DateTime.now()))
           .toLocal();
     }
     return defValue;
   }
 
-  static bool optBool(Json? data, String key,
-      {bool defValue = false}) {
+  static bool? optBool(Json? data, String key, {bool? defValue}) {
     if (data == null) return defValue;
     if (data.containsKey(key)) {
       if (data[key] == 'YES' || data[key] == 1 || data[key] == true) {

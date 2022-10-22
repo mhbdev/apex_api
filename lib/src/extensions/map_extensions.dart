@@ -9,7 +9,7 @@ extension JsonExtension on Json {
     return JsonChecker.optDate(this, key, defValue: defaultValue);
   }
 
-  bool optBool(String key, {bool defaultValue = false}) {
+  bool? optBool(String key, {bool? defaultValue}) {
     return JsonChecker.optBool(this, key, defValue: defaultValue);
   }
 
