@@ -13,15 +13,15 @@ extension JsonExtension on Json {
     return JsonChecker.optBool(this, key, defValue: defaultValue);
   }
 
-  num optNum(String key, {num defaultValue = 0.0}) {
+  num? optNum(String key, {num? defaultValue}) {
     return JsonChecker.optNum(this, key, defValue: defaultValue);
   }
 
-  int optInt(String key, {int defaultValue = 0}) {
+  int? optInt(String key, {int? defaultValue}) {
     return JsonChecker.optInt(this, key, defValue: defaultValue);
   }
 
-  double optDouble(String key, {double defaultValue = 0.0}) {
+  double? optDouble(String key, {double? defaultValue}) {
     return JsonChecker.optDouble(this, key, defValue: defaultValue);
   }
 }

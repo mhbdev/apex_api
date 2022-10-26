@@ -7,7 +7,6 @@ import '../preferences/storage_util.dart';
 enum Method { post, get }
 
 abstract class Request {
-  final String? handlerUrl;
   final String? groupName;
   final bool isPublic;
   final bool needCredentials;
@@ -20,10 +19,11 @@ abstract class Request {
     this.isEmpty = false,
     this.encrypt,
     this.groupName,
-    this.handlerUrl,
     this.isPublic = false,
     this.needCredentials = false,
   });
+
+  String? get handlerUrl => null;
 
   Future<String> get zip async =>
       '{$action => $groupName => $isPublic => ${await toJson()}}';
@@ -123,7 +123,12 @@ class SimpleRequest extends Request {
   final Json? responseMockData;
 
   factory SimpleRequest.empty({bool? encrypt, Json? responseMockData}) =>
-      SimpleRequest(0, isEmpty: true, encrypt: encrypt, responseMockData: responseMockData);
+      SimpleRequest(
+        0,
+        isEmpty: true,
+        encrypt: encrypt,
+        responseMockData: responseMockData,
+      );
 
   SimpleRequest(
     int action, {
@@ -132,7 +137,6 @@ class SimpleRequest extends Request {
     bool isPublic = false,
     bool isEmpty = false,
     String? groupName,
-    String? handlerUrl,
     bool needCredentials = false,
     bool? encrypt,
   }) : super(
@@ -142,7 +146,6 @@ class SimpleRequest extends Request {
           needCredentials: needCredentials,
           isPublic: isPublic,
           encrypt: encrypt,
-          handlerUrl: handlerUrl,
         );
 
   @override

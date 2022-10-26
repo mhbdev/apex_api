@@ -258,6 +258,7 @@ class Api extends Equatable {
 
   Future<Res> uploadFile<Res extends Response>(
     Request request, {
+        String languageCode = 'EN',
     String? fileName,
     String fileKey = 'file',
     String? filePath,
@@ -266,7 +267,25 @@ class Api extends Equatable {
     bool? showRetry,
     ValueChanged<double>? onProgress,
     ValueChanged<VoidCallback>? cancelToken,
-  }) {
+  }) async {
+    String? fingerprint = ApexApiDb.getFingerprint();
+    if (fingerprint == null) {
+      fingerprint = await Fingerprint.getHash();
+      ApexApiDb.setFingerprint(fingerprint);
+    }
+
+    final imei = ApexApiDb.getImei();
+    final imsi = ApexApiDb.getImsi();
+    request.addParams({
+      'additional': {
+        if (imei != null) 'imei': imei,
+        if (imsi != null) 'imsi': imsi
+      },
+      'fingerprint': fingerprint,
+      'language': languageCode.toUpperCase(),
+      if (ApexApiDb.isAuthenticated && !request.containsKey('token') && ![1001, 1002, 1003, 1004].contains(request.action)) 'token': ApexApiDb.getToken(),
+    });
+
     return connector.uploadFile(
       request,
       fileName: fileName,

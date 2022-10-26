@@ -49,14 +49,14 @@ abstract class BaseResponse {
     this.error,
     this.errorMessage,
   })
-      : success = JsonChecker.optInt(data, 'success', defValue: -1),
+      : success = JsonChecker.optInt(data, 'success', defValue: -1)!,
         message = JsonChecker.optString(data, 'message', defValue: null),
         expiresAt = DateTime
             .now()
             .millisecondsSinceEpoch +
             Duration(
                 seconds: JsonChecker.optInt(data, 'save_local_duration',
-                    defValue: 0))
+                    defValue: 0)!)
                 .inMilliseconds;
 
   bool containsKey(String key) {
@@ -84,7 +84,7 @@ class Response extends BaseResponse {
         super(data: data) {
     if (data != null && data.containsKey('is_logged_in')) {
       bool saveLocal = JsonChecker.optInt(data, 'save_local_duration',
-          defValue: 0) > 0;
+          defValue: 0)! > 0;
       if (!saveLocal && data['is_logged_in'] == 0) {
         ApexApiDb.removeToken();
         // TODO : clear database notify user

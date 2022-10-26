@@ -1,12 +1,4 @@
 import 'package:apex_api/apex_api.dart';
-import 'package:apex_api/apex_api.dart';
-import 'package:apex_api/apex_api.dart';
-import 'package:apex_api/apex_api.dart';
-import 'package:apex_api/apex_api.dart';
-import 'package:apex_api/apex_api.dart';
-import 'package:apex_api/apex_api.dart';
-import 'package:apex_api/apex_api.dart';
-import 'package:timezone/timezone.dart' as tz;
 
 class JsonChecker {
   static String? optString(Json? data, String key, {String? defValue = ''}) {
@@ -29,7 +21,7 @@ class JsonChecker {
     return defValue;
   }
 
-  static int optInt(Json? data, String key, {int defValue = 0}) {
+  static int? optInt(Json? data, String key, {int? defValue}) {
     if (data == null) return defValue;
     if (data.containsKey(key)) {
       return data[key] != null
@@ -47,7 +39,7 @@ class JsonChecker {
     return defValue;
   }
 
-  static num optNum(Json? data, String key, {num defValue = 0}) {
+  static num? optNum(Json? data, String key, {num? defValue}) {
     if (data == null) return defValue;
     if (data.containsKey(key)) {
       return data[key] != null
@@ -57,7 +49,7 @@ class JsonChecker {
     return defValue;
   }
 
-  static double optDouble(Json? data, String key, {double defValue = 0.0}) {
+  static double? optDouble(Json? data, String key, {double? defValue}) {
     if (data == null) return defValue;
     if (data.containsKey(key)) {
       return data[key] != null

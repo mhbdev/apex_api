@@ -74,7 +74,11 @@ class Http extends Connector {
           'Could not get the server response! something went wrong!',
         ));
       }
-      return Future.error(e, s);
+      return Response(null,
+          error: ServerException(
+              message: 'Could not parse server response! Here is the reason : \r\n$e',
+              code: response != null ? response.statusCode.toString() : '-1'),
+          errorMessage: '$e\r\n$s') as Res;
     }
 
     if (showProgress == true) hideProgressDialog();
@@ -152,7 +156,7 @@ class Http extends Connector {
   }
 
   String _decrypt(Crypto crypto, String responseMessage, {bool? enc}) {
-    if(enc == false) {
+    if (enc == false) {
       return responseMessage;
     }
 
@@ -236,43 +240,55 @@ class Http extends Connector {
 
     String requestMessage = await _encrypt(crypto, request);
 
-    req.fields[config.namespace] = requestMessage;
-    req.fields['os'] = os;
-
+    req.fields['request'] = jsonEncode({
+      'os': os,
+      'version': request.isPublic ? config.publicVersion : config.privateVersion,
+      'private': request.isPublic ? 0 : 1,
+      config.namespace: requestMessage
+    });
     if (cancelToken != null) cancelToken(req.close);
 
-    var response = await req.send().timeout(config.uploadTimeout);
+    try {
+      var response = await req.send().timeout(config.uploadTimeout);
 
-    if (showProgress == true) hideProgressDialog();
+      if (showProgress == true) hideProgressDialog();
 
-    if (response.statusCode == 200) {
-      var responseBody = await response.stream.bytesToString();
-      responseBody = _decrypt(crypto, responseBody, enc: request.encrypt);
+      if (response.statusCode == 200) {
+        var responseBody = await response.stream.bytesToString();
+        responseBody = _decrypt(crypto, responseBody, enc: request.encrypt);
 
-      try {
-        var jsonResponse = jsonDecode(responseBody);
-        final response = responseModels[Res]!(jsonResponse) as Res;
-        return response;
-      } on FormatException {
+        try {
+          var jsonResponse = jsonDecode(responseBody);
+          final response = responseModels[Res]!(jsonResponse) as Res;
+          return response;
+        } on FormatException {
+          if (showRetry == true) {
+            showRetryDialog(ServerErrorException(
+                'Could not parse server response! wanna retry?'));
+          }
+          return Response(null,
+              error: ServerErrorException('Could not parse server response!'))
+          as Res;
+        }
+      } else {
         if (showRetry == true) {
-          showRetryDialog(ServerErrorException(
-              'Could not parse server response! wanna retry?'));
+          showRetryDialog(ServerException(
+              message: 'Could not parse server response!',
+              code: response.statusCode.toString()));
         }
         return Response(null,
-                error: ServerErrorException('Could not parse server response!'))
-            as Res;
+            error: ServerException(
+                message: 'Could not parse server response!',
+                code: response.statusCode.toString()),
+            errorMessage: '${response.statusCode}') as Res;
       }
-    } else {
-      if (showRetry == true) {
-        showRetryDialog(ServerException(
-            message: 'Could not parse server response!',
-            code: response.statusCode.toString()));
-      }
+    } catch(e) {
+      if (showProgress == true) hideProgressDialog();
       return Response(null,
           error: ServerException(
-              message: 'Could not parse server response!',
-              code: response.statusCode.toString()),
-          errorMessage: '${response.statusCode}') as Res;
+              message: 'Could not receive server response!',
+              code: '-1'),
+          errorMessage: '-1 ($e)') as Res;
     }
   }
 

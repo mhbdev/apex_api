@@ -183,6 +183,7 @@ class ServerWrapperState extends State<ServerWrapper>
   }) {
     return widget.api.uploadFile<Res>(
       request,
+      languageCode: widget.locale.languageCode,
       showProgress: showProgress,
       showRetry: showRetry,
       onProgress: onProgress,
