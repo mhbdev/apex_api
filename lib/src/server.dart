@@ -1,11 +1,12 @@
 import 'dart:async';
 import 'dart:convert';
+
 import 'package:apex_api/apex_api.dart';
+import 'package:apex_api/src/exceptions/bad_request_exception.dart';
 import 'package:apex_api/src/exceptions/server_error_exception.dart';
 import 'package:apex_api/src/exceptions/unauthorized_exception.dart';
 import 'package:apex_api/src/preferences/storage_util.dart';
 import 'package:crypto/crypto.dart';
-import 'package:fingerprintjs/fingerprintjs.dart';
 import 'package:flutter/foundation.dart';
 
 class Api extends Equatable {
@@ -83,8 +84,8 @@ class Api extends Equatable {
 
     String? fingerprint = ApexApiDb.getFingerprint();
     if (fingerprint == null) {
-      fingerprint = await Fingerprint.getHash();
-      ApexApiDb.setFingerprint(fingerprint);
+      // TODO : suitable exception is needed
+      throw BadRequestException();
     }
 
     final imei = ApexApiDb.getImei();
@@ -96,7 +97,10 @@ class Api extends Equatable {
       },
       'fingerprint': fingerprint,
       'language': languageCode.toUpperCase(),
-      if (ApexApiDb.isAuthenticated && !request.containsKey('token') && ![1001, 1002, 1003, 1004].contains(request.action)) 'token': ApexApiDb.getToken(),
+      if (ApexApiDb.isAuthenticated &&
+          !request.containsKey('token') &&
+          ![1001, 1002, 1003, 1004].contains(request.action))
+        'token': ApexApiDb.getToken(),
     });
 
     // try to load action from storage if action has been saved and not expired
@@ -112,9 +116,7 @@ class Api extends Equatable {
             DateTime.now().millisecondsSinceEpoch > (result['expires_at'] ?? 0);
         if (!isExpired) {
           if (config.debugMode) {
-            if (kDebugMode) {
-              print('Pre-loading $Res');
-            }
+              debugPrint('Pre-loading $Res');
           }
           // Can use local storage saved data
           final response = models[Res]!(result ?? {}) as Res;
@@ -122,9 +124,7 @@ class Api extends Equatable {
           return response;
         } else {
           if (config.debugMode) {
-            if (kDebugMode) {
-              print('Could not preload $Res');
-            }
+              debugPrint('Could not preload $Res');
           }
         }
       }
@@ -258,7 +258,7 @@ class Api extends Equatable {
 
   Future<Res> uploadFile<Res extends Response>(
     Request request, {
-        String languageCode = 'EN',
+    String languageCode = 'EN',
     String? fileName,
     String fileKey = 'file',
     String? filePath,
@@ -270,8 +270,8 @@ class Api extends Equatable {
   }) async {
     String? fingerprint = ApexApiDb.getFingerprint();
     if (fingerprint == null) {
-      fingerprint = await Fingerprint.getHash();
-      ApexApiDb.setFingerprint(fingerprint);
+      // TODO : suitable exception is needed
+      throw BadRequestException();
     }
 
     final imei = ApexApiDb.getImei();
@@ -283,7 +283,10 @@ class Api extends Equatable {
       },
       'fingerprint': fingerprint,
       'language': languageCode.toUpperCase(),
-      if (ApexApiDb.isAuthenticated && !request.containsKey('token') && ![1001, 1002, 1003, 1004].contains(request.action)) 'token': ApexApiDb.getToken(),
+      if (ApexApiDb.isAuthenticated &&
+          !request.containsKey('token') &&
+          ![1001, 1002, 1003, 1004].contains(request.action))
+        'token': ApexApiDb.getToken(),
     });
 
     return connector.uploadFile(

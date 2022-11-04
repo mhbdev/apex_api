@@ -1,9 +1,10 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:apex_api/src/clients/http/browser_client.dart'
+    if (dart.library.html) 'package:http/browser_client.dart';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
-import 'package:http/browser_client.dart';
 import 'package:http/io_client.dart';
 
 class FileRequest extends http.MultipartRequest {

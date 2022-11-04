@@ -12,7 +12,6 @@ class ApiConfig extends Equatable {
     this.windowsKey,
     this.privateVersion = 1,
     this.publicVersion = 1,
-    this.uploadHandlerUrl,
     this.options,
     this.port,
     this.debugMode = false,
@@ -45,7 +44,6 @@ class ApiConfig extends Equatable {
   final bool debugMode;
   final Duration uploadTimeout;
   final Duration requestTimeout;
-  final String? uploadHandlerUrl;
 
   String? get secretKey => encrypt
       ? (kIsWeb
@@ -110,7 +108,6 @@ class ApiConfig extends Equatable {
       publicVersion: publicVersion ?? this.publicVersion,
       requestTimeout: requestTimeout ?? this.requestTimeout,
       uploadTimeout: uploadTimeout ?? this.uploadTimeout,
-      uploadHandlerUrl: uploadHandlerUrl ?? this.uploadHandlerUrl,
     );
   }
 
@@ -123,6 +120,5 @@ class ApiConfig extends Equatable {
         privateVersion,
         publicVersion,
         useSocket,
-        uploadHandlerUrl
       ];
 }

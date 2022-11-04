@@ -1,3 +1,1 @@
-# 1.0.0
-
-First Release
+ApexTeam Server Api Client

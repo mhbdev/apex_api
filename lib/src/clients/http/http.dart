@@ -1,13 +1,10 @@
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:apex_api/src/exceptions/bad_request_exception.dart';
 import 'package:apex_api/src/models/request.dart';
-
 import 'package:apex_api/src/models/response.dart';
 import 'package:flutter/foundation.dart';
-import 'browser_client.dart'
-    if (dart.library.html) 'package:http/browser_client.dart';
+import 'package:http/http.dart' as http;
 import 'package:http/io_client.dart';
 import 'package:http_parser/http_parser.dart';
 
@@ -16,8 +13,8 @@ import '../../exceptions/server_error_exception.dart';
 import '../../exceptions/server_exception.dart';
 import '../../multipart_request.dart';
 import '../connector.dart';
-
-import 'package:http/http.dart' as http;
+import 'browser_client.dart'
+    if (dart.library.html) 'package:http/browser_client.dart';
 
 class Http extends Connector {
   http.Client? client;
@@ -76,7 +73,8 @@ class Http extends Connector {
       }
       return Response(null,
           error: ServerException(
-              message: 'Could not parse server response! Here is the reason : \r\n$e',
+              message:
+                  'Could not parse server response! Here is the reason : \r\n$e',
               code: response != null ? response.statusCode.toString() : '-1'),
           errorMessage: '$e\r\n$s') as Res;
     }
@@ -219,12 +217,8 @@ class Http extends Connector {
 
     if (showProgress == true) showProgressDialog();
 
-    if (request.handlerUrl == null && config.uploadHandlerUrl == null) {
-      throw BadRequestException();
-    }
-
-    var req = FileRequest(request.method.name,
-        Uri.parse(request.handlerUrl ?? config.uploadHandlerUrl ?? ''),
+    var req = FileRequest(
+        request.method.name, Uri.parse(request.handlerUrl ?? config.host ?? ''),
         (bytes, totalBytes) {
       if (onProgress != null) onProgress(bytes / totalBytes);
     });
@@ -242,7 +236,8 @@ class Http extends Connector {
 
     req.fields['request'] = jsonEncode({
       'os': os,
-      'version': request.isPublic ? config.publicVersion : config.privateVersion,
+      'version':
+          request.isPublic ? config.publicVersion : config.privateVersion,
       'private': request.isPublic ? 0 : 1,
       config.namespace: requestMessage
     });
@@ -267,8 +262,9 @@ class Http extends Connector {
                 'Could not parse server response! wanna retry?'));
           }
           return Response(null,
-              error: ServerErrorException('Could not parse server response!'))
-          as Res;
+                  error:
+                      ServerErrorException('Could not parse server response!'))
+              as Res;
         }
       } else {
         if (showRetry == true) {
@@ -282,12 +278,11 @@ class Http extends Connector {
                 code: response.statusCode.toString()),
             errorMessage: '${response.statusCode}') as Res;
       }
-    } catch(e) {
+    } catch (e) {
       if (showProgress == true) hideProgressDialog();
       return Response(null,
           error: ServerException(
-              message: 'Could not receive server response!',
-              code: '-1'),
+              message: 'Could not receive server response!', code: '-1'),
           errorMessage: '-1 ($e)') as Res;
     }
   }
