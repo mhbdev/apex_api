@@ -15,7 +15,7 @@ void main() {
   ApexApi.init();
 
   runApp(
-    RootRestorationScope(
+    const RootRestorationScope(
       restorationId: 'root',
       child: MyApp(),
     ),
@@ -24,7 +24,7 @@ void main() {
 
 class MyApp extends StatelessWidget {
 
-  MyApp({Key? key}) : super(key: key);
+  const MyApp({Key? key}) : super(key: key);
 
   // This widget is the root of your application.
   @override

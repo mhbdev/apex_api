@@ -112,9 +112,7 @@ class Api extends Equatable {
             DateTime.now().millisecondsSinceEpoch > (result['expires_at'] ?? 0);
         if (!isExpired) {
           if (config.debugMode) {
-            if (kDebugMode) {
-              print('Pre-loading $Res');
-            }
+              debugPrint('Pre-loading $Res');
           }
           // Can use local storage saved data
           final response = models[Res]!(result ?? {}) as Res;
@@ -122,9 +120,7 @@ class Api extends Equatable {
           return response;
         } else {
           if (config.debugMode) {
-            if (kDebugMode) {
-              print('Could not preload $Res');
-            }
+              debugPrint('Could not preload $Res');
           }
         }
       }
