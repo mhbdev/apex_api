@@ -15,8 +15,7 @@ class Api extends Equatable {
     required Map<Type, ResType> responseModels,
   }) {
     models = {Response: (x) => Response.fromJson(x), ...responseModels};
-    connector =
-        config.useSocket ? ApexSocket(config, models) : Http(config, models);
+    connector = config.useSocket ? ApexSocket(config, models) : Http(config, models);
   }
 
   factory Api.socket(
@@ -26,8 +25,7 @@ class Api extends Equatable {
         responseModels: responseModels);
   }
 
-  factory Api.http(
-      {required ApiConfig config, required Map<Type, ResType> responseModels}) {
+  factory Api.http({required ApiConfig config, required Map<Type, ResType> responseModels}) {
     return Api(
         config: config.copyWith(useSocket: false),
         responseModels: responseModels);
@@ -37,9 +35,10 @@ class Api extends Equatable {
   late final Connector connector;
   late final Map<Type, ResType> models;
 
-  ConnectionStatus get status => (connector is ApexSocket)
-      ? (connector as ApexSocket).status
-      : (connector.isConnected
+  ConnectionStatus get status =>
+      (connector is ApexSocket)
+          ? (connector as ApexSocket).status
+          : (connector.isConnected
           ? ConnectionStatus.connected
           : ConnectionStatus.destroyed);
 
@@ -77,7 +76,7 @@ class Api extends Equatable {
             'User not logged in and connection is private and user needs credentials : action ($Res - ${request.action})'));
       }
     } else {
-      final response = models[Res]!(await request.responseMock) as Res;
+      final response = models[Response]!(await request.responseMock) as Res;
       connector.handleMessage(response);
       return response;
     }
@@ -112,11 +111,10 @@ class Api extends Equatable {
       final storage = StorageUtil.getString(storageKey);
       if (storage != null) {
         final result = jsonDecode(storage);
-        final isExpired =
-            DateTime.now().millisecondsSinceEpoch > (result['expires_at'] ?? 0);
+        final isExpired = DateTime.now().millisecondsSinceEpoch > (result['expires_at'] ?? 0);
         if (!isExpired) {
           if (config.debugMode) {
-              debugPrint('Pre-loading $Res');
+            debugPrint('Pre-loading $Res');
           }
           // Can use local storage saved data
           final response = models[Res]!(result ?? {}) as Res;
@@ -124,7 +122,7 @@ class Api extends Equatable {
           return response;
         } else {
           if (config.debugMode) {
-              debugPrint('Could not preload $Res');
+            debugPrint('Could not preload $Res');
           }
         }
       }

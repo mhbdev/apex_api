@@ -91,8 +91,7 @@ class Http extends Connector {
           responseMessage = response.body;
         }
 
-        responseMessage =
-            _decrypt(crypto, responseMessage, enc: request.encrypt);
+        responseMessage = _decrypt(crypto, responseMessage, request: request);
 
         if (config.debugMode) {
           if (kDebugMode) {
@@ -141,6 +140,11 @@ class Http extends Connector {
 
   Future<String> _encrypt(Crypto crypto, Request request) async {
     String formattedRequest = jsonEncode(await request.toJson());
+
+    if (request.isPublic) {
+      return base64Encode(utf8.encode(formattedRequest));
+    }
+
     if (request.encrypt == false) {
       return formattedRequest;
     }
@@ -153,12 +157,12 @@ class Http extends Connector {
     return formattedRequest;
   }
 
-  String _decrypt(Crypto crypto, String responseMessage, {bool? enc}) {
-    if (enc == false) {
+  String _decrypt(Crypto crypto, String responseMessage, {required Request request}) {
+    if (request.encrypt == false || request.isPublic) {
       return responseMessage;
     }
 
-    if (config.encrypt || enc == true) {
+    if (config.encrypt || request.encrypt == true) {
       responseMessage = crypto.decrypt(responseMessage);
       return responseMessage;
     }
@@ -250,7 +254,7 @@ class Http extends Connector {
 
       if (response.statusCode == 200) {
         var responseBody = await response.stream.bytesToString();
-        responseBody = _decrypt(crypto, responseBody, enc: request.encrypt);
+        responseBody = _decrypt(crypto, responseBody, request: request);
 
         try {
           var jsonResponse = jsonDecode(responseBody);
@@ -258,8 +262,7 @@ class Http extends Connector {
           return response;
         } on FormatException {
           if (showRetry == true) {
-            showRetryDialog(ServerErrorException(
-                'Could not parse server response! wanna retry?'));
+            showRetryDialog(ServerErrorException('Could not parse server response! wanna retry?'));
           }
           return Response(null,
                   error:

@@ -75,13 +75,12 @@ class ServerWrapper extends StatefulWidget {
   State<ServerWrapper> createState() => ServerWrapperState();
 }
 
-class ServerWrapperState extends State<ServerWrapper>
-    with WidgetLoadMixin, MountedStateMixin {
+class ServerWrapperState extends State<ServerWrapper> with WidgetLoadMixin, MountedStateMixin {
   bool isShowingProgress = false;
   bool isShowingRetry = false;
   Request? _request;
-  bool? _showProgress;
-  bool? _showRetry;
+  bool? _showProgress, _showRetry, _ignoreExpireTime;
+  dynamic _onSuccess, _onError, _onStart;
 
   @override
   void didUpdateWidget(covariant ServerWrapper oldWidget) {
@@ -106,8 +105,7 @@ class ServerWrapperState extends State<ServerWrapper>
               child: MessageNotifierBuilder(
                 notifier: connector,
                 builder: (context, value) {
-                  return ConnectionBadge(
-                      server: widget.api, locale: widget.locale);
+                  return ConnectionBadge(server: widget.api, locale: widget.locale);
                 },
               ),
             ),
@@ -118,7 +116,8 @@ class ServerWrapperState extends State<ServerWrapper>
 
   Connector get connector => widget.api.connector;
 
-  Future<Res> request<Res extends Response>(Request request, {
+  Future<Res> request<Res extends Response>(
+    Request request, {
     bool? showProgress,
     bool? showRetry,
     VoidCallback? onStart,
@@ -129,18 +128,26 @@ class ServerWrapperState extends State<ServerWrapper>
     _request = request;
     _showProgress = showProgress;
     _showRetry = showRetry;
-    return widget.api.request<Res>(request,
-        languageCode: widget.locale.languageCode,
-        showProgress: showProgress,
-        showRetry: showRetry,
-        onStart: onStart,
-        onSuccess: onSuccess,
-        onError: onError,
-        ignoreExpireTime: ignoreExpireTime,
-        manageLoginStep: widget.loginStepManager);
+    _onStart = onStart;
+    _onSuccess = onSuccess;
+    _onError = onError;
+    _ignoreExpireTime = ignoreExpireTime;
+
+    return widget.api.request<Res>(
+      request,
+      languageCode: widget.locale.languageCode,
+      showProgress: showProgress,
+      showRetry: showRetry,
+      onStart: onStart,
+      onSuccess: onSuccess,
+      onError: onError,
+      ignoreExpireTime: ignoreExpireTime,
+      manageLoginStep: widget.loginStepManager,
+    );
   }
 
-  Future<bool> join<Res extends Response>(JoinGroupRequest joinRequest, {
+  Future<bool> join<Res extends Response>(
+    JoinGroupRequest joinRequest, {
     VoidCallback? onStart,
     StreamSocket<Res>? stream,
     SocketJoinController<Res>? controller,
@@ -171,7 +178,8 @@ class ServerWrapperState extends State<ServerWrapper>
     widget.api.unsubscribePublic(event);
   }
 
-  Future<Res> uploadFile<Res extends Response>(Request request, {
+  Future<Res> uploadFile<Res extends Response>(
+    Request request, {
     String? fileName,
     String fileKey = 'file',
     String? filePath,
@@ -181,6 +189,7 @@ class ServerWrapperState extends State<ServerWrapper>
     ValueChanged<double>? onProgress,
     ValueChanged<VoidCallback>? cancelToken,
   }) {
+    // TODO : implementation of retry request for uploads
     return widget.api.uploadFile<Res>(
       request,
       languageCode: widget.locale.languageCode,
@@ -209,33 +218,32 @@ class ServerWrapperState extends State<ServerWrapper>
           case ConnectorTag.showProgress:
             if (!isShowingProgress) {
               isShowingProgress = true;
-              _showDialog((context) =>
-              widget.progressBuilder != null
+              _showDialog((context) => widget.progressBuilder != null
                   ? widget.progressBuilder!(context)
                   : Builder(
-                builder: (context) {
-                  final progressWidget = Container(
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(16),
-                      color: Colors.white,
-                    ),
-                    padding: const EdgeInsets.all(32),
-                    child: const CircularProgressIndicator(),
-                  );
-                  final child = WillPopScope(
-                    onWillPop: () => Future(() => false),
-                    child: Align(
-                      alignment: Alignment.center,
-                      child: progressWidget,
-                    ),
-                  );
+                      builder: (context) {
+                        final progressWidget = Container(
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(16),
+                            color: Colors.white,
+                          ),
+                          padding: const EdgeInsets.all(32),
+                          child: const CircularProgressIndicator(),
+                        );
+                        final child = WillPopScope(
+                          onWillPop: () => Future(() => false),
+                          child: Align(
+                            alignment: Alignment.center,
+                            child: progressWidget,
+                          ),
+                        );
 
-                  return Material(
-                    type: MaterialType.transparency,
-                    child: child,
-                  );
-                },
-              ));
+                        return Material(
+                          type: MaterialType.transparency,
+                          child: child,
+                        );
+                      },
+                    ));
             }
             break;
           case ConnectorTag.hideProgress:
@@ -248,38 +256,33 @@ class ServerWrapperState extends State<ServerWrapper>
             if (!isShowingRetry) {
               isShowingRetry = true;
               _showDialog(
-                    (context) =>
-                widget.retryBuilder != null
+                    (context) => widget.retryBuilder != null
                     ? widget.retryBuilder!(
-                  context,
-                  _onRetry,
-                  _onCloseRetry,
-                )
+                        context,
+                        _onRetry,
+                        _onCloseRetry,
+                      )
                     : CupertinoAlertDialog(
-                  content: Text(
-                    widget.locale.languageCode.toUpperCase() == 'FA'
-                        ? 'مشکلی در ارسال درخواست شما پیش آمده. آیا میخواهید درخواست قبلی مجدد تکرار شود؟'
-                        : 'Something went wrong during sending your request. Do you want to resend current request?',
-                  ),
-                  actions: [
-                    CupertinoDialogAction(
-                      onPressed: _onRetry,
-                      child: Text(
-                        widget.locale.languageCode.toUpperCase() == 'FA'
-                            ? 'بله'
-                            : 'Yes',
+                        content: Text(
+                          widget.locale.languageCode.toUpperCase() == 'FA'
+                              ? 'مشکلی در ارسال درخواست شما پیش آمده. آیا میخواهید درخواست قبلی مجدد تکرار شود؟'
+                              : 'Something went wrong during sending your request. Do you want to resend current request?',
+                        ),
+                        actions: [
+                          CupertinoDialogAction(
+                            onPressed: _onRetry,
+                            child: Text(
+                              widget.locale.languageCode.toUpperCase() == 'FA' ? 'بله' : 'Yes',
+                            ),
+                          ),
+                          CupertinoDialogAction(
+                            onPressed: _onCloseRetry,
+                            child: Text(
+                              widget.locale.languageCode.toUpperCase() == 'FA' ? 'خیر' : 'No',
+                            ),
+                          ),
+                        ],
                       ),
-                    ),
-                    CupertinoDialogAction(
-                      onPressed: _onCloseRetry,
-                      child: Text(
-                        widget.locale.languageCode.toUpperCase() == 'FA'
-                            ? 'خیر'
-                            : 'No',
-                      ),
-                    ),
-                  ],
-                ),
               );
             }
             break;
@@ -296,9 +299,7 @@ class ServerWrapperState extends State<ServerWrapper>
 
   void _pop({Object? result, bool? rootNavigator}) {
     return rootNavigator != null
-        ? Navigator.of(widget.navKey.currentContext!,
-        rootNavigator: rootNavigator)
-        .pop(result)
+        ? Navigator.of(widget.navKey.currentContext!, rootNavigator: rootNavigator).pop(result)
         : widget.navKey.currentState!.pop(result);
   }
 
@@ -311,14 +312,18 @@ class ServerWrapperState extends State<ServerWrapper>
         builder: builder);
   }
 
-  void _onRetry() {
+  void _onRetry<Res extends Response>() {
     if (_request != null) {
       _pop();
       isShowingRetry = false;
-      request(
+      request<Res>(
         _request!,
         showRetry: _showRetry,
         showProgress: _showProgress,
+        ignoreExpireTime: _ignoreExpireTime ?? false,
+        onError: _onError,
+        onSuccess: _onSuccess,
+        onStart: _onStart,
       );
     }
   }
