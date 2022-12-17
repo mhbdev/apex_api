@@ -10,15 +10,18 @@ import 'package:http/io_client.dart';
 class FileRequest extends http.MultipartRequest {
   http.Client? client;
   final void Function(int bytes, int totalBytes)? onProgress;
+  final Duration? connectionTimeout;
 
   /// Creates a new [MultipartRequest].
   FileRequest(
     String method,
     Uri url, [
     this.onProgress,
+    this.connectionTimeout,
     this.client,
   ]) : super(method, url) {
-    client ??= kIsWeb ? BrowserClient() : IOClient(HttpClient());
+    client ??=
+        kIsWeb ? BrowserClient() : IOClient(HttpClient()..connectionTimeout = connectionTimeout);
   }
 
   void close() {

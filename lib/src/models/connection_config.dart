@@ -15,10 +15,12 @@ class ApiConfig extends Equatable {
     this.options,
     this.port,
     this.debugMode = false,
-    this.uploadTimeout = const Duration(seconds: 60),
-    this.requestTimeout = const Duration(seconds: 60),
+    this.uploadTimeout = const Duration(minutes: 5),
+    this.requestTimeout = const Duration(seconds: 30),
+    this.connectionTimeout = const Duration(seconds: 10),
     this.useMocks = false,
     this.useSocket = true,
+    this.onTimeout,
   }) : assert(!useSocket || port == null,
             'If you are using socket system, you have to pass an integer number as port');
 
@@ -44,6 +46,9 @@ class ApiConfig extends Equatable {
   final bool debugMode;
   final Duration uploadTimeout;
   final Duration requestTimeout;
+  final Duration connectionTimeout;
+
+  final OnTimeout? onTimeout;
 
   String? get secretKey => encrypt
       ? (kIsWeb

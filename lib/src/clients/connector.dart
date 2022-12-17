@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:typed_data';
 
 import 'package:apex_api/src/exceptions/server_exception.dart';
 import 'package:apex_api/src/models/request.dart';

@@ -133,17 +133,21 @@ class ServerWrapperState extends State<ServerWrapper> with WidgetLoadMixin, Moun
     _onError = onError;
     _ignoreExpireTime = ignoreExpireTime;
 
-    return widget.api.request<Res>(
-      request,
-      languageCode: widget.locale.languageCode,
-      showProgress: showProgress,
-      showRetry: showRetry,
-      onStart: onStart,
-      onSuccess: onSuccess,
-      onError: onError,
-      ignoreExpireTime: ignoreExpireTime,
-      manageLoginStep: widget.loginStepManager,
-    );
+    try {
+      return widget.api.request<Res>(
+        request,
+        languageCode: widget.locale.languageCode,
+        showProgress: showProgress,
+        showRetry: showRetry,
+        onStart: onStart,
+        onSuccess: onSuccess,
+        onError: onError,
+        ignoreExpireTime: ignoreExpireTime,
+        manageLoginStep: widget.loginStepManager,
+      );
+    } catch (e) {
+      rethrow;
+    }
   }
 
   Future<bool> join<Res extends Response>(
@@ -256,7 +260,8 @@ class ServerWrapperState extends State<ServerWrapper> with WidgetLoadMixin, Moun
             if (!isShowingRetry) {
               isShowingRetry = true;
               _showDialog(
-                    (context) => widget.retryBuilder != null
+                dismissible: true,
+                (context) => widget.retryBuilder != null
                     ? widget.retryBuilder!(
                         context,
                         _onRetry,

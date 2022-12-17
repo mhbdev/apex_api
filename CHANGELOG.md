@@ -1,6 +1,9 @@
-## 1.0.1+2
+## 1.0.1+4
 
+* OnRetry
+* LoginBuilder
 * Base64 encoding of http requests.
+* ReactiveWidget
 
 ## 1.0.1
 

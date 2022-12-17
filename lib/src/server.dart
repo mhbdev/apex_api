@@ -18,29 +18,21 @@ class Api extends Equatable {
     connector = config.useSocket ? ApexSocket(config, models) : Http(config, models);
   }
 
-  factory Api.socket(
-      {required ApiConfig config, required Map<Type, ResType> responseModels}) {
-    return Api(
-        config: config.copyWith(useSocket: true),
-        responseModels: responseModels);
+  factory Api.socket({required ApiConfig config, required Map<Type, ResType> responseModels}) {
+    return Api(config: config.copyWith(useSocket: true), responseModels: responseModels);
   }
 
   factory Api.http({required ApiConfig config, required Map<Type, ResType> responseModels}) {
-    return Api(
-        config: config.copyWith(useSocket: false),
-        responseModels: responseModels);
+    return Api(config: config.copyWith(useSocket: false), responseModels: responseModels);
   }
 
   final ApiConfig config;
   late final Connector connector;
   late final Map<Type, ResType> models;
 
-  ConnectionStatus get status =>
-      (connector is ApexSocket)
-          ? (connector as ApexSocket).status
-          : (connector.isConnected
-          ? ConnectionStatus.connected
-          : ConnectionStatus.destroyed);
+  ConnectionStatus get status => (connector is ApexSocket)
+      ? (connector as ApexSocket).status
+      : (connector.isConnected ? ConnectionStatus.connected : ConnectionStatus.destroyed);
 
   bool get isReconnecting => status == ConnectionStatus.reconnecting;
 
@@ -65,13 +57,10 @@ class Api extends Equatable {
     bool ignoreExpireTime = false,
   }) async {
     assert(languageCode.length == 2);
-    assert(models.containsKey(Res),
-        'You should define $Res in Apex responseModels');
+    assert(models.containsKey(Res), 'You should define $Res in Apex responseModels');
 
     if (config.useMocks == false) {
-      if (!request.isPublic &&
-          request.needCredentials &&
-          !ApexApiDb.isAuthenticated) {
+      if (!request.isPublic && request.needCredentials && !ApexApiDb.isAuthenticated) {
         return Future.error(UnauthorisedException(
             'User not logged in and connection is private and user needs credentials : action ($Res - ${request.action})'));
       }
@@ -84,16 +73,13 @@ class Api extends Equatable {
     String? fingerprint = ApexApiDb.getFingerprint();
     if (fingerprint == null) {
       // TODO : suitable exception is needed
-      throw BadRequestException();
+      return Future.error(BadRequestException());
     }
 
     final imei = ApexApiDb.getImei();
     final imsi = ApexApiDb.getImsi();
     request.addParams({
-      'additional': {
-        if (imei != null) 'imei': imei,
-        if (imsi != null) 'imsi': imsi
-      },
+      'additional': {if (imei != null) 'imei': imei, if (imsi != null) 'imsi': imsi},
       'fingerprint': fingerprint,
       'language': languageCode.toUpperCase(),
       if (ApexApiDb.isAuthenticated &&
@@ -107,7 +93,7 @@ class Api extends Equatable {
         .convert(utf8.encode(
             'R_${request.action}${ApexApiDb.isAuthenticated && !request.isPublic ? (ApexApiDb.getToken() ?? '') : ''}'))
         .toString();
-    if (!ignoreExpireTime) {
+    if (!ignoreExpireTime && Res is! Response) {
       final storage = StorageUtil.getString(storageKey);
       if (storage != null) {
         final result = jsonDecode(storage);
@@ -135,8 +121,7 @@ class Api extends Equatable {
 
       if (response.hasData) {
         if (manageLoginStep != null) {
-          if (response.success < 0 &&
-              ![1001, 1002, 1003, 1004].contains(request.action)) {
+          if (response.success < 0 && ![1001, 1002, 1003, 1004].contains(request.action)) {
             manageLoginStep(response.loginStep);
           }
         }
@@ -145,13 +130,11 @@ class Api extends Equatable {
       // save response to storage if it has save_local_duration parameter
       if (response.hasData &&
           response.containsKey('save_local_duration') &&
-          response.data!['save_local_duration'] > 0) {
+          response.data!['save_local_duration'] > 0 &&
+          Res is! Response) {
         StorageUtil.putString(
           storageKey,
-          jsonEncode(<String, dynamic>{
-            ...(response.data ?? {}),
-            'expires_at': response.expiresAt
-          }),
+          jsonEncode(<String, dynamic>{...(response.data ?? {}), 'expires_at': response.expiresAt}),
         );
       }
 
@@ -177,8 +160,7 @@ class Api extends Equatable {
           completer.complete(models[Res]!(json) as Res);
         }
       } on FormatException {
-        completer.completeError(
-            ServerErrorException('Could not parse server response!'));
+        completer.completeError(ServerErrorException('Could not parse server response!'));
       }
     });
     return completer.future;
@@ -189,9 +171,7 @@ class Api extends Equatable {
 
     Completer<dynamic> completer = Completer();
     try {
-      (connector as ApexSocket)
-          .socket
-          .off(event, (data) => completer.complete(data));
+      (connector as ApexSocket).socket.off(event, (data) => completer.complete(data));
     } catch (e, s) {
       completer.completeError(e, s);
     }
@@ -208,50 +188,49 @@ class Api extends Equatable {
       LoginStepManager? loginStepManager}) async {
     assert(connector is ApexSocket);
 
-    final response = await request<Res>(joinRequest,
-        onStart: onStart,
-        showRetry: showRetry,
-        showProgress: showProgress,
-        manageLoginStep: loginStepManager);
+    try {
+      final response = await request<Res>(joinRequest,
+          onStart: onStart,
+          showRetry: showRetry,
+          showProgress: showProgress,
+          manageLoginStep: loginStepManager);
 
-    if (joinRequest.groupName != null) {
-      if (response.hasData) {
-        subscribePublic<Res>(
-          response.data!['event_name'],
-        ).then((data) {
-          if (stream != null) stream.addResponse(data);
-          if (controller != null) controller.onData(data);
-          if (onListen != null) onListen(data);
-        });
-
-        if (stream != null) {
-          stream.addListener((tag, [message]) {
-            if (tag == 'closed') {
-              (connector as ApexSocket)
-                  .socket
-                  .off(response.data!['event_name']);
-            }
+      if (joinRequest.groupName != null) {
+        if (response.hasData) {
+          subscribePublic<Res>(
+            response.data!['event_name'],
+          ).then((data) {
+            if (stream != null) stream.addResponse(data);
+            if (controller != null) controller.onData(data);
+            if (onListen != null) onListen(data);
           });
-        }
 
-        if (controller != null) {
-          controller.addListener((tag, [message]) {
-            if (tag == joinRequest.groupName) {
-              (connector as ApexSocket)
-                  .socket
-                  .off(response.data!['event_name']);
-            }
-          });
+          if (stream != null) {
+            stream.addListener((tag, [message]) {
+              if (tag == 'closed') {
+                (connector as ApexSocket).socket.off(response.data!['event_name']);
+              }
+            });
+          }
+
+          if (controller != null) {
+            controller.addListener((tag, [message]) {
+              if (tag == joinRequest.groupName) {
+                (connector as ApexSocket).socket.off(response.data!['event_name']);
+              }
+            });
+          }
+        } else {
+          return Future.error(
+            response.error ?? ServerErrorException('Could not join to desired groupName.'),
+          );
         }
-      } else {
-        return Future.error(
-          response.error ??
-              ServerErrorException('Could not join to desired groupName.'),
-        );
       }
-    }
 
-    return response.success == 1;
+      return response.success == 1;
+    } catch (e) {
+      rethrow;
+    }
   }
 
   Future<Res> uploadFile<Res extends Response>(
@@ -269,16 +248,13 @@ class Api extends Equatable {
     String? fingerprint = ApexApiDb.getFingerprint();
     if (fingerprint == null) {
       // TODO : suitable exception is needed
-      throw BadRequestException();
+      return Future.error(BadRequestException());
     }
 
     final imei = ApexApiDb.getImei();
     final imsi = ApexApiDb.getImsi();
     request.addParams({
-      'additional': {
-        if (imei != null) 'imei': imei,
-        if (imsi != null) 'imsi': imsi
-      },
+      'additional': {if (imei != null) 'imei': imei, if (imsi != null) 'imsi': imsi},
       'fingerprint': fingerprint,
       'language': languageCode.toUpperCase(),
       if (ApexApiDb.isAuthenticated &&

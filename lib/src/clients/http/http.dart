@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
@@ -13,8 +14,7 @@ import '../../exceptions/server_error_exception.dart';
 import '../../exceptions/server_exception.dart';
 import '../../multipart_request.dart';
 import '../connector.dart';
-import 'browser_client.dart'
-    if (dart.library.html) 'package:http/browser_client.dart';
+import 'browser_client.dart' if (dart.library.html) 'package:http/browser_client.dart';
 
 class Http extends Connector {
   http.Client? client;
@@ -24,19 +24,24 @@ class Http extends Connector {
   @override
   void init() {
     if (!isInitialized) {
-      client = kIsWeb ? BrowserClient() : IOClient(HttpClient());
+      client = kIsWeb
+          ? BrowserClient()
+          : IOClient(HttpClient()..connectionTimeout = config.connectionTimeout);
       isInitialized = true;
     }
   }
 
   @override
-  Future<Res> send<Res extends Response>(
-    Request request, {
+  Future<Res> send<Res extends Response>(Request request, {
     VoidCallback? onStart,
     bool? showProgress,
     bool? showRetry,
   }) async {
-    client ??= kIsWeb ? BrowserClient() : IOClient(HttpClient());
+    // client ??= kIsWeb
+    //     ? BrowserClient()
+    //     : IOClient(HttpClient()..connectionTimeout = config.connectionTimeout);
+    // client = IOClient(HttpClient()..connectionTimeout = config.connectionTimeout);
+    // client ??= HttpClient()..connectionTimeout = config.connectionTimeout;
 
     final crypto = Crypto(config.secretKey, config.publicKey);
 
@@ -54,8 +59,7 @@ class Http extends Connector {
     http.Response? response;
     try {
       response = request.method == Method.post
-          ? await _post(request.handlerUrl ?? config.host, config.namespace,
-              requestMessage,
+          ? await _post(request.handlerUrl ?? config.host, config.namespace, requestMessage,
               timeLimit: config.requestTimeout, isPrivate: !request.isPublic)
           : await _get(
               request.handlerUrl ?? config.host,
@@ -73,8 +77,7 @@ class Http extends Connector {
       }
       return Response(null,
           error: ServerException(
-              message:
-                  'Could not parse server response! Here is the reason : \r\n$e',
+              message: 'Could not parse server response! Here is the reason : \r\n$e}',
               code: response != null ? response.statusCode.toString() : '-1'),
           errorMessage: '$e\r\n$s') as Res;
     }
@@ -85,8 +88,8 @@ class Http extends Connector {
       if (response.statusCode == 200) {
         // OK
         String responseMessage;
-        if ((request.encrypt ?? false) || (config.encrypt)) {
-          responseMessage = response.body.replaceAll(' ', '');
+        if (((request.encrypt ?? false) || (config.encrypt))) {
+          responseMessage = response.body.trim();
         } else {
           responseMessage = response.body;
         }
@@ -105,24 +108,19 @@ class Http extends Connector {
           return res;
         } on FormatException {
           if (showRetry == true) {
-            showRetryDialog(ServerErrorException(
-                'Could not parse server response! wanna retry?'));
+            showRetryDialog(ServerErrorException('Could not parse server response! wanna retry?'));
           }
-          return Response(null,
-                  error:
-                      ServerErrorException('Could not parse server response!'))
+          return Response(null, error: ServerErrorException('Could not parse server response!'))
               as Res;
         }
       } else {
         if (showRetry == true) {
           showRetryDialog(ServerException(
-              message: 'Could not parse server response!',
-              code: response.statusCode.toString()));
+              message: 'Could not parse server response!', code: response.statusCode.toString()));
         }
         return Response(null,
             error: ServerException(
-                message: 'Could not parse server response!',
-                code: response.statusCode.toString()),
+                message: 'Could not parse server response!', code: response.statusCode.toString()),
             errorMessage: '${response.statusCode}') as Res;
       }
     } else {
@@ -170,16 +168,15 @@ class Http extends Connector {
     return responseMessage;
   }
 
-  Future<http.Response?> _post(
-    String url,
-    String requestName,
-    String requestMessage, {
-    required timeLimit,
-    onTimeOut,
-    headers,
-    encoding,
-    bool isPrivate = true,
-  }) async {
+  Future<http.Response?> _post(String url,
+      String requestName,
+      String requestMessage, {
+        required timeLimit,
+        onTimeOut,
+        headers,
+        encoding,
+        bool isPrivate = true,
+      }) async {
     var requestBody = {
       'os': os,
       'private': (isPrivate ? 1 : 0),
@@ -188,14 +185,13 @@ class Http extends Connector {
     };
     return client!
         .post(Uri.parse(url),
-            headers: headers,
-            body: {'request': jsonEncode(requestBody)},
-            encoding: encoding ?? Encoding.getByName('utf-8'))
+        headers: headers,
+        body: {'request': jsonEncode(requestBody)},
+        encoding: encoding ?? Encoding.getByName('utf-8'))
         .timeout(timeLimit, onTimeout: onTimeOut);
   }
 
-  Future<http.Response?> _get(
-      String url, String requestName, String requestMessage,
+  Future<http.Response?> _get(String url, String requestName, String requestMessage,
       {required timeLimit, onTimeOut, headers}) async {
     String queryUrl = '$url?$requestName=$requestMessage&os=$os';
     return client!
@@ -204,8 +200,7 @@ class Http extends Connector {
   }
 
   @override
-  Future<Res> uploadFile<Res extends Response>(
-    Request request, {
+  Future<Res> uploadFile<Res extends Response>(Request request, {
     String? fileName,
     String fileKey = 'file',
     String? filePath,
@@ -215,21 +210,21 @@ class Http extends Connector {
     ValueChanged<double>? onProgress,
     ValueChanged<VoidCallback>? cancelToken,
   }) async {
-    client ??= http.Client();
-
     Crypto crypto = Crypto(config.secretKey, config.publicKey);
 
     if (showProgress == true) showProgressDialog();
 
     var req = FileRequest(
-        request.method.name, Uri.parse(request.handlerUrl ?? config.host ?? ''),
-        (bytes, totalBytes) {
-      if (onProgress != null) onProgress(bytes / totalBytes);
-    });
+      request.method.name,
+      Uri.parse(request.handlerUrl ?? config.host),
+      (bytes, totalBytes) {
+        if (onProgress != null) onProgress(bytes / totalBytes);
+      },
+      config.connectionTimeout,
+    );
     if (blobData != null) {
       req.files.add(http.MultipartFile.fromBytes(fileKey, blobData,
-          contentType: MediaType('application', 'octet-stream'),
-          filename: fileName));
+          contentType: MediaType('application', 'octet-stream'), filename: fileName));
     }
 
     if (filePath != null) {
@@ -240,8 +235,7 @@ class Http extends Connector {
 
     req.fields['request'] = jsonEncode({
       'os': os,
-      'version':
-          request.isPublic ? config.publicVersion : config.privateVersion,
+      'version': request.isPublic ? config.publicVersion : config.privateVersion,
       'private': request.isPublic ? 0 : 1,
       config.namespace: requestMessage
     });
@@ -259,33 +253,29 @@ class Http extends Connector {
         try {
           var jsonResponse = jsonDecode(responseBody);
           final response = responseModels[Res]!(jsonResponse) as Res;
+          handleMessage(response);
           return response;
         } on FormatException {
           if (showRetry == true) {
             showRetryDialog(ServerErrorException('Could not parse server response! wanna retry?'));
           }
-          return Response(null,
-                  error:
-                      ServerErrorException('Could not parse server response!'))
+          return Response(null, error: ServerErrorException('Could not parse server response!'))
               as Res;
         }
       } else {
         if (showRetry == true) {
           showRetryDialog(ServerException(
-              message: 'Could not parse server response!',
-              code: response.statusCode.toString()));
+              message: 'Could not parse server response!', code: response.statusCode.toString()));
         }
         return Response(null,
             error: ServerException(
-                message: 'Could not parse server response!',
-                code: response.statusCode.toString()),
+                message: 'Could not parse server response!', code: response.statusCode.toString()),
             errorMessage: '${response.statusCode}') as Res;
       }
     } catch (e) {
       if (showProgress == true) hideProgressDialog();
       return Response(null,
-          error: ServerException(
-              message: 'Could not receive server response!', code: '-1'),
+          error: ServerException(message: 'Could not receive server response!', code: '-1'),
           errorMessage: '-1 ($e)') as Res;
     }
   }
