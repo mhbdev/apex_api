@@ -1,12 +1,19 @@
 import 'package:apex_api/apex_api.dart';
 
 class JsonChecker {
+  static List<T>? optList<T>(Json? data, String key,
+      {List<T>? defValue, required T Function(dynamic e) reviver}) {
+    if (data == null) return defValue;
+    if (data.containsKey(key) && data[key] != null) {
+      return data[key] != null ? (data[key] as List).map((e) => reviver(e)).toList() : defValue;
+    }
+    return defValue;
+  }
+
   static String? optString(Json? data, String key, {String? defValue = ''}) {
     if (data == null) return defValue;
     if (data.containsKey(key)) {
-      return data[key] != null
-          ? (data[key] != null ? data[key].toString() : defValue)
-          : defValue;
+      return data[key] != null ? (data[key] != null ? data[key].toString() : defValue) : defValue;
     }
     return defValue;
   }
@@ -67,9 +74,9 @@ class JsonChecker {
       }
 
       return (DateTime.tryParse(data[key].toString()
-          // + tz.getLocation('Asia/Tehran').currentTimeZone.abbreviation
+        // + tz.getLocation('Asia/Tehran').currentTimeZone.abbreviation
       ) ??
-              (defValue ?? DateTime.now()))
+          (defValue ?? DateTime.now()))
           .toLocal();
     }
     return defValue;

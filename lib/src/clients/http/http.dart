@@ -9,6 +9,7 @@ import 'package:http/http.dart' as http;
 import 'package:http/io_client.dart';
 import 'package:http_parser/http_parser.dart';
 
+import '../../../apex_api.dart';
 import '../../cipher/crypto.dart';
 import '../../exceptions/server_error_exception.dart';
 import '../../exceptions/server_exception.dart';
@@ -33,7 +34,6 @@ class Http extends Connector {
 
   @override
   Future<Res> send<Res extends Response>(Request request, {
-    VoidCallback? onStart,
     bool? showProgress,
     bool? showRetry,
   }) async {
@@ -53,7 +53,6 @@ class Http extends Connector {
 
     String requestMessage = await _encrypt(crypto, request);
 
-    if (onStart != null) onStart();
     if (showProgress == true) showProgressDialog();
 
     http.Response? response;
@@ -209,7 +208,14 @@ class Http extends Connector {
     bool? showRetry,
     ValueChanged<double>? onProgress,
     ValueChanged<VoidCallback>? cancelToken,
+    VoidCallback? onStart,
+    OnSuccess<Res>? onSuccess,
+    OnConnectionError? onError,
   }) async {
+    if (onStart != null) {
+      onStart();
+    }
+
     Crypto crypto = Crypto(config.secretKey, config.publicKey);
 
     if (showProgress == true) showProgressDialog();
@@ -254,29 +260,38 @@ class Http extends Connector {
           var jsonResponse = jsonDecode(responseBody);
           final response = responseModels[Res]!(jsonResponse) as Res;
           handleMessage(response);
-          return response;
-        } on FormatException {
-          if (showRetry == true) {
-            showRetryDialog(ServerErrorException('Could not parse server response! wanna retry?'));
+          if (onSuccess != null) {
+            onSuccess(response);
           }
-          return Response(null, error: ServerErrorException('Could not parse server response!'))
-              as Res;
+          return response;
+        } on FormatException catch (e) {
+          final exception = ServerErrorException('Could not parse server response! wanna retry?');
+          if (showRetry == true) {
+            showRetryDialog(exception);
+          }
+          if (onError != null) {
+            onError(exception, e.toString());
+          }
+          return Response(null, error: exception) as Res;
         }
       } else {
+        final exception = ServerException(
+            message: 'Could not parse server response!', code: response.statusCode.toString());
         if (showRetry == true) {
-          showRetryDialog(ServerException(
-              message: 'Could not parse server response!', code: response.statusCode.toString()));
+          showRetryDialog(exception);
         }
-        return Response(null,
-            error: ServerException(
-                message: 'Could not parse server response!', code: response.statusCode.toString()),
-            errorMessage: '${response.statusCode}') as Res;
+        if (onError != null) {
+          onError(exception, response.statusCode);
+        }
+        return Response(null, error: exception, errorMessage: '${response.statusCode}') as Res;
       }
     } catch (e) {
       if (showProgress == true) hideProgressDialog();
-      return Response(null,
-          error: ServerException(message: 'Could not receive server response!', code: '-1'),
-          errorMessage: '-1 ($e)') as Res;
+      final exception = ServerException(message: 'Could not receive server response!', code: '-1');
+      if (onError != null) {
+        onError(exception, e.toString());
+      }
+      return Response(null, error: exception, errorMessage: '-1 ($e)') as Res;
     }
   }
 

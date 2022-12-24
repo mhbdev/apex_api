@@ -29,7 +29,7 @@ class ReactiveWidget<Res extends Response> extends StatefulWidget {
   final Request request;
   final Widget loadingWidget;
   final Widget Function(Res response, VoidCallback onRetry) failureWidget;
-  final Widget Function(Res response) successWidget;
+  final Widget Function(Res response, VoidCallback onRetry) successWidget;
   final Widget Function(ServerException exception, Object error, VoidCallback onRetry) retryWidget;
   final bool ignoreExpireTime;
   final ReactiveController? controller;
@@ -79,19 +79,25 @@ class _ReactiveWidgetState<Res extends Response> extends State<ReactiveWidget<Re
       stream: _controller.stream,
       builder: (context, snapshot) {
         if (snapshot.hasData && snapshot.data != null) {
+          print('hasData');
           final data = snapshot.data!;
           if (data.state == ReactiveState.loading) {
+            print('loading');
             return widget.loadingWidget;
           } else if (data.state == ReactiveState.failure) {
+            print('failure');
             return widget.failureWidget(data.response!, _sendRequest);
           } else if (data.state == ReactiveState.success) {
-            return widget.successWidget(data.response!);
+            print('success');
+            return widget.successWidget(data.response!, _sendRequest);
           }
         } else if (snapshot.hasError && snapshot.error != null) {
+          print('hasError');
           final error = snapshot.error! as ReactiveError;
           return widget.retryWidget(error.exception, error.error, _sendRequest);
         }
 
+        print('unknown');
         return widget.loadingWidget;
       },
     );
@@ -106,12 +112,14 @@ class _ReactiveWidgetState<Res extends Response> extends State<ReactiveWidget<Re
     widget.request.send<Res>(
       context,
       onStart: () {
+        print('sending request...');
         if (widget.listener != null) {
           widget.listener!(ReactiveState.loading, _sendRequest);
         }
         _controller.add(ReactiveResponse(ReactiveState.loading));
       },
       onSuccess: (response) {
+        print('response returned');
         if (response.isSuccessful) {
           if (widget.listener != null) {
             widget.listener!(ReactiveState.success, _sendRequest, response: response);
@@ -128,6 +136,7 @@ class _ReactiveWidgetState<Res extends Response> extends State<ReactiveWidget<Re
       showProgress: false,
       ignoreExpireTime: widget.ignoreExpireTime,
       onError: (exception, error) {
+        print('error occured');
         final reactiveError = ReactiveError(
           exception,
           error,

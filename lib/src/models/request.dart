@@ -25,8 +25,7 @@ abstract class Request {
 
   String? get handlerUrl => null;
 
-  Future<String> get zip async =>
-      '{$action => $groupName => $isPublic => ${await toJson()}}';
+  Future<String> get zip async => '{$action => $groupName => $isPublic => ${await toJson()}}';
 
   Future<Json> get json;
 
@@ -114,7 +113,38 @@ abstract class Request {
         showRetry: showRetry,
         onStart: onStart,
         onSuccess: onSuccess,
-        onError: onError);
+        onError: onError,
+        ignoreExpireTime: ignoreExpireTime);
+  }
+
+  Future<Res> startUpload<Res extends Response>(
+    BuildContext context, {
+    bool? showProgress,
+    // bool? showRetry,
+    VoidCallback? onStart,
+    OnSuccess<Res>? onSuccess,
+    OnConnectionError? onError,
+    bool ignoreExpireTime = false,
+    ValueChanged<VoidCallback>? cancelToken,
+    String? fileName,
+    String fileKey = 'file',
+    String? filePath,
+    Uint8List? blobData,
+    ValueChanged<double>? onProgress,
+  }) {
+    return context.api.uploadFile<Res>(
+      this,
+      // showRetry: showRetry,
+      showProgress: showProgress,
+      cancelToken: cancelToken,
+      fileKey: fileKey,
+      onProgress: onProgress,
+      blobData: blobData,
+      fileName: fileName,
+      filePath: filePath,
+      onSuccess: onSuccess,
+      onError: onError,
+    );
   }
 }
 
@@ -122,8 +152,7 @@ class SimpleRequest extends Request {
   final Json? data;
   final Json? responseMockData;
 
-  factory SimpleRequest.empty({bool? encrypt, Json? responseMockData}) =>
-      SimpleRequest(
+  factory SimpleRequest.empty({bool? encrypt, Json? responseMockData}) => SimpleRequest(
         0,
         isEmpty: true,
         encrypt: encrypt,
@@ -153,30 +182,12 @@ class SimpleRequest extends Request {
 
   @override
   Future<Json> get responseMock async => responseMockData ?? {};
-
-  Future<Res> make<Res extends Response>(
-    BuildContext context, {
-    bool? showProgress,
-    bool? showRetry,
-    VoidCallback? onStart,
-    OnSuccess<Res>? onSuccess,
-    OnConnectionError? onError,
-    bool ignoreExpireTime = false,
-  }) =>
-      context.api.request(this,
-          onSuccess: onSuccess,
-          showProgress: showProgress,
-          onError: onError,
-          onStart: onStart,
-          showRetry: showRetry,
-          ignoreExpireTime: ignoreExpireTime);
 }
 
 class JoinGroupRequest extends Request {
   final Json? data;
 
-  JoinGroupRequest(String groupName, {this.data})
-      : super(2, isPublic: true, groupName: groupName);
+  JoinGroupRequest(String groupName, {this.data}) : super(2, isPublic: true, groupName: groupName);
 
   @override
   Future<Json> get json async => data ?? {};

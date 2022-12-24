@@ -34,18 +34,12 @@ class ApexSocket extends Connector {
     super.config,
     super.responseModels,
   )   : options = config.options ??
-            io.OptionBuilder()
-                .disableAutoConnect()
-                .disableForceNew()
-                .disableForceNewConnection(),
+            io.OptionBuilder().disableAutoConnect().disableForceNew().disableForceNewConnection(),
         namespace = config.namespace,
         port = config.port,
         url = config.host,
-        assert(Uri.parse(config.host).isAbsolute,
-            '${config.host} must be a valid url.'),
-        assert(
-            config.port == null ||
-                (config.port! >= -1 && config.port! <= 65535),
+        assert(Uri.parse(config.host).isAbsolute, '${config.host} must be a valid url.'),
+        assert(config.port == null || (config.port! >= -1 && config.port! <= 65535),
             '${config.port} must be a number between -1 and 65535. or null.');
 
   io.Socket connect({EventHandler? onConnect}) {
@@ -175,8 +169,7 @@ class ApexSocket extends Connector {
         }));
   }
 
-  void privateEmitWithAck(
-      Crypto crypto, Json request, void Function(String? data) ack,
+  void privateEmitWithAck(Crypto crypto, Json request, void Function(String? data) ack,
       {bool? enc}) {
     final shouldEncrypt = ((enc == null) ? config.encrypt : enc);
     String data = jsonEncode(request);
@@ -207,8 +200,7 @@ class ApexSocket extends Connector {
     });
   }
 
-  void publicEmitWithAck(
-      Crypto crypto, Json request, void Function(String? data) ack,
+  void publicEmitWithAck(Crypto crypto, Json request, void Function(String? data) ack,
       {bool? enc}) {
     final shouldEncrypt = enc ?? config.encrypt;
     String data = jsonEncode(request);
@@ -271,7 +263,6 @@ class ApexSocket extends Connector {
   @override
   Future<Res> send<Res extends Response>(
     Request request, {
-    VoidCallback? onStart,
     bool? showProgress,
     bool? showRetry,
   }) async {
@@ -279,26 +270,21 @@ class ApexSocket extends Connector {
 
     if (config.debugMode) {
       if (kDebugMode) {
-        print(
-            '[ZIP-REQUEST] [$Res] [${DateTime.now()}] [${await request.zip}]');
+        print('[ZIP-REQUEST] [$Res] [${DateTime.now()}] [${await request.zip}]');
       }
     }
 
-    if (onStart != null) onStart();
     Future<Res> response;
     if (status == ConnectionStatus.connected) {
-      response = _emit<Res>(crypto, request,
-          showProgress: showProgress, showRetry: showRetry);
+      response = _emit<Res>(crypto, request, showProgress: showProgress, showRetry: showRetry);
     } else {
       await connectAsync();
-      response = _emit<Res>(crypto, request,
-          showProgress: showProgress, showRetry: showRetry);
+      response = _emit<Res>(crypto, request, showProgress: showProgress, showRetry: showRetry);
     }
 
     if (config.debugMode) {
       if (kDebugMode) {
-        print(
-            '[ZIP-RESPONSE] [$Res] [${DateTime.now()}] [${(await response).data}]');
+        print('[ZIP-RESPONSE] [$Res] [${DateTime.now()}] [${(await response).data}]');
       }
     }
 
@@ -371,14 +357,11 @@ class ApexSocket extends Connector {
     }
   }
 
-  void _couldNotParseException<Res extends Response>(
-      Completer<Res> completer, bool? showRetry) {
+  void _couldNotParseException<Res extends Response>(Completer<Res> completer, bool? showRetry) {
     if (showRetry == true) {
-      showRetryDialog(ServerErrorException(
-          'Could not parse server response! wanna retry?'));
+      showRetryDialog(ServerErrorException('Could not parse server response! wanna retry?'));
     }
-    completer.completeError(
-        ServerErrorException('Could not parse server response!'));
+    completer.completeError(ServerErrorException('Could not parse server response!'));
   }
 
   void _notifyStatus() {
@@ -397,16 +380,12 @@ class ApexSocket extends Connector {
     bool? showRetry,
     ValueChanged<double>? onProgress,
     ValueChanged<VoidCallback>? cancelToken,
+    OnSuccess<Res>? onSuccess,
+    OnConnectionError? onError,
+    VoidCallback? onStart,
   }) {
     throw UnimplementedError();
   }
 }
 
-enum ConnectionStatus {
-  reconnecting,
-  connecting,
-  connected,
-  error,
-  destroyed,
-  timeout
-}
+enum ConnectionStatus { reconnecting, connecting, connected, error, destroyed, timeout }

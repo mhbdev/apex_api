@@ -9,12 +9,18 @@ import 'package:apex_api/src/preferences/storage_util.dart';
 import 'package:crypto/crypto.dart';
 import 'package:flutter/foundation.dart';
 
+import 'models/default_requests/city_province.dart';
+
 class Api extends Equatable {
   Api({
     required this.config,
     required Map<Type, ResType> responseModels,
   }) {
-    models = {Response: (x) => Response.fromJson(x), ...responseModels};
+    models = {
+      Response: Response.fromJson,
+      FetchProvinces: FetchProvinces.fromJson,
+      ...responseModels
+    };
     connector = config.useSocket ? ApexSocket(config, models) : Http(config, models);
   }
 
@@ -59,14 +65,22 @@ class Api extends Equatable {
     assert(languageCode.length == 2);
     assert(models.containsKey(Res), 'You should define $Res in Apex responseModels');
 
+    if (onStart != null) {
+      onStart();
+    }
+
     if (config.useMocks == false) {
       if (!request.isPublic && request.needCredentials && !ApexApiDb.isAuthenticated) {
         return Future.error(UnauthorisedException(
             'User not logged in and connection is private and user needs credentials : action ($Res - ${request.action})'));
       }
     } else {
-      final response = models[Response]!(await request.responseMock) as Res;
+      final response = models[Res]!(await request.responseMock) as Res;
       connector.handleMessage(response);
+      await Future.delayed(const Duration(seconds: 2));
+      if (onSuccess != null) {
+        onSuccess(response);
+      }
       return response;
     }
 
@@ -116,8 +130,11 @@ class Api extends Equatable {
 
     // could not preload the response from storage so make a new call to connector which is 'socket' or 'http'
     try {
-      final response = await connector.send<Res>(request,
-          showProgress: showProgress, showRetry: showRetry, onStart: onStart);
+      final response = await connector.send<Res>(
+        request,
+        showProgress: showProgress,
+        showRetry: showRetry,
+      );
 
       if (response.hasData) {
         if (manageLoginStep != null) {
@@ -244,6 +261,9 @@ class Api extends Equatable {
     bool? showRetry,
     ValueChanged<double>? onProgress,
     ValueChanged<VoidCallback>? cancelToken,
+    VoidCallback? onStart,
+    OnSuccess<Res>? onSuccess,
+    OnConnectionError? onError,
   }) async {
     String? fingerprint = ApexApiDb.getFingerprint();
     if (fingerprint == null) {
@@ -263,7 +283,7 @@ class Api extends Equatable {
         'token': ApexApiDb.getToken(),
     });
 
-    return connector.uploadFile(
+    return connector.uploadFile<Res>(
       request,
       fileName: fileName,
       fileKey: fileKey,
@@ -273,6 +293,9 @@ class Api extends Equatable {
       blobData: blobData,
       cancelToken: cancelToken,
       onProgress: onProgress,
+      onError: onError,
+      onSuccess: onSuccess,
+      onStart: onStart,
     );
   }
 

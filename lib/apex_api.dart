@@ -20,6 +20,7 @@ export 'src/exceptions/exceptions.dart';
 export 'src/extensions/context_extensions.dart';
 export 'src/extensions/map_extensions.dart';
 export 'src/models/connection_config.dart';
+export 'src/models/default_requests/city_province.dart';
 export 'src/models/default_requests/login.dart';
 export 'src/models/request.dart';
 export 'src/models/response.dart';

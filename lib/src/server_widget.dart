@@ -133,21 +133,17 @@ class ServerWrapperState extends State<ServerWrapper> with WidgetLoadMixin, Moun
     _onError = onError;
     _ignoreExpireTime = ignoreExpireTime;
 
-    try {
-      return widget.api.request<Res>(
-        request,
-        languageCode: widget.locale.languageCode,
-        showProgress: showProgress,
-        showRetry: showRetry,
-        onStart: onStart,
-        onSuccess: onSuccess,
-        onError: onError,
-        ignoreExpireTime: ignoreExpireTime,
-        manageLoginStep: widget.loginStepManager,
-      );
-    } catch (e) {
-      rethrow;
-    }
+    return widget.api.request<Res>(
+      request,
+      languageCode: widget.locale.languageCode,
+      showProgress: showProgress,
+      showRetry: showRetry,
+      onStart: onStart,
+      onSuccess: onSuccess,
+      onError: onError,
+      ignoreExpireTime: ignoreExpireTime,
+      manageLoginStep: widget.loginStepManager,
+    );
   }
 
   Future<bool> join<Res extends Response>(
@@ -189,22 +185,35 @@ class ServerWrapperState extends State<ServerWrapper> with WidgetLoadMixin, Moun
     String? filePath,
     Uint8List? blobData,
     bool? showProgress,
-    bool? showRetry,
+    // bool? showRetry,
+    OnSuccess<Res>? onSuccess,
+    OnConnectionError? onError,
     ValueChanged<double>? onProgress,
     ValueChanged<VoidCallback>? cancelToken,
+    VoidCallback? onStart,
   }) {
     // TODO : implementation of retry request for uploads
+    // _request = request;
+    // _showProgress = showProgress;
+    // _showRetry = showRetry;
+    // _onStart = onStart;
+    // _onSuccess = onSuccess;
+    // _onError = onError;
+
     return widget.api.uploadFile<Res>(
       request,
       languageCode: widget.locale.languageCode,
       showProgress: showProgress,
-      showRetry: showRetry,
+      // showRetry: showRetry,
       onProgress: onProgress,
       cancelToken: cancelToken,
       blobData: blobData,
       filePath: filePath,
       fileKey: fileKey,
       fileName: fileName,
+      onStart: onStart,
+      onSuccess: onSuccess,
+      onError: onError,
     );
   }
 

@@ -23,8 +23,7 @@ abstract class Connector extends MessageNotifier {
   final Map<Type, ResType> responseModels;
 
   Connector(this.config, this.responseModels)
-      : assert(Uri.parse(config.host).isAbsolute,
-            '${config.host} must be a valid url.');
+      : assert(Uri.parse(config.host).isAbsolute, '${config.host} must be a valid url.');
 
   String get os => kIsWeb
       ? 'W'
@@ -40,8 +39,7 @@ abstract class Connector extends MessageNotifier {
 
   void init();
 
-  Future<Res> send<Res extends Response>(Request request,
-      {VoidCallback? onStart, bool? showProgress, bool? showRetry});
+  Future<Res> send<Res extends Response>(Request request, {bool? showProgress, bool? showRetry});
 
   void showProgressDialog() => notifyListeners(ConnectorTag.showProgress);
 
@@ -64,5 +62,8 @@ abstract class Connector extends MessageNotifier {
     bool? showRetry,
     ValueChanged<double>? onProgress,
     ValueChanged<VoidCallback>? cancelToken,
+    VoidCallback? onStart,
+    OnSuccess<Res>? onSuccess,
+    OnConnectionError? onError,
   });
 }
