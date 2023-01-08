@@ -2,14 +2,9 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:apex_api/apex_api.dart';
-import 'package:apex_api/src/exceptions/bad_request_exception.dart';
-import 'package:apex_api/src/exceptions/server_error_exception.dart';
-import 'package:apex_api/src/exceptions/unauthorized_exception.dart';
 import 'package:apex_api/src/preferences/storage_util.dart';
 import 'package:crypto/crypto.dart';
 import 'package:flutter/foundation.dart';
-
-import 'models/default_requests/city_province.dart';
 
 class Api extends Equatable {
   Api({
@@ -17,8 +12,8 @@ class Api extends Equatable {
     required Map<Type, ResType> responseModels,
   }) {
     models = {
-      Response: Response.fromJson,
       FetchProvinces: FetchProvinces.fromJson,
+      DataModel: DataModel.fromJson,
       ...responseModels
     };
     connector = config.useSocket ? ApexSocket(config, models) : Http(config, models);
@@ -51,19 +46,19 @@ class Api extends Equatable {
   bool get connected => status == ConnectionStatus.connected;
 
   /// used to call action and send request
-  Future<Res> request<Res extends Response>(
+  Future<BaseResponse<DM>> request<DM extends DataModel>(
     Request request, {
     String languageCode = 'EN',
     bool? showProgress,
     bool? showRetry,
     VoidCallback? onStart,
-    OnSuccess<Res>? onSuccess,
+    OnSuccess<DM>? onSuccess,
     OnConnectionError? onError,
     LoginStepManager? manageLoginStep,
     bool ignoreExpireTime = false,
   }) async {
     assert(languageCode.length == 2);
-    assert(models.containsKey(Res), 'You should define $Res in Apex responseModels');
+    assert(models.containsKey(DM), 'You should define $DM in Apex responseModels');
 
     if (onStart != null) {
       onStart();
@@ -72,10 +67,13 @@ class Api extends Equatable {
     if (config.useMocks == false) {
       if (!request.isPublic && request.needCredentials && !ApexApiDb.isAuthenticated) {
         return Future.error(UnauthorisedException(
-            'User not logged in and connection is private and user needs credentials : action ($Res - ${request.action})'));
+            'User not logged in and connection is private and user needs credentials : action ($DM - ${request.action})'));
       }
     } else {
-      final response = models[Res]!(await request.responseMock) as Res;
+      final response = BaseResponse(
+        data: await request.responseMock,
+        model: models[DM]!(await request.responseMock) as DM,
+      );
       connector.handleMessage(response);
       await Future.delayed(const Duration(seconds: 2));
       if (onSuccess != null) {
@@ -103,26 +101,36 @@ class Api extends Equatable {
     });
 
     // try to load action from storage if action has been saved and not expired
+    if (config.debugMode) {
+      if (kDebugMode) {
+        print(
+            'R_${config.appVersion}_${request.action}${ApexApiDb.isAuthenticated && !request.isPublic ? (ApexApiDb.getToken() ?? 'pr') : 'pu'}');
+      }
+    }
     final storageKey = md5
         .convert(utf8.encode(
-            'R_${request.action}${ApexApiDb.isAuthenticated && !request.isPublic ? (ApexApiDb.getToken() ?? '') : ''}'))
+            'R_${config.appVersion}_${request.action}${ApexApiDb.isAuthenticated && !request.isPublic ? (ApexApiDb.getToken() ?? 'pr') : 'pu'}'))
         .toString();
-    if (!ignoreExpireTime && Res is! Response) {
+    if (!ignoreExpireTime) {
+      //TODO : check it out => && DM is! Response) {
       final storage = StorageUtil.getString(storageKey);
       if (storage != null) {
         final result = jsonDecode(storage);
         final isExpired = DateTime.now().millisecondsSinceEpoch > (result['expires_at'] ?? 0);
         if (!isExpired) {
           if (config.debugMode) {
-            debugPrint('Pre-loading $Res');
+            debugPrint('Pre-loading $DM');
           }
           // Can use local storage saved data
-          final response = models[Res]!(result ?? {}) as Res;
+          final response = BaseResponse(
+            data: result,
+            model: models[DM]!(result ?? {}) as DM,
+          );
           if (onSuccess != null) onSuccess(response);
           return response;
         } else {
           if (config.debugMode) {
-            debugPrint('Could not preload $Res');
+            debugPrint('Could not preload $DM');
           }
         }
       }
@@ -130,25 +138,22 @@ class Api extends Equatable {
 
     // could not preload the response from storage so make a new call to connector which is 'socket' or 'http'
     try {
-      final response = await connector.send<Res>(
+      final response = await connector.send<DM>(
         request,
         showProgress: showProgress,
         showRetry: showRetry,
       );
 
-      if (response.hasData) {
-        if (manageLoginStep != null) {
-          if (response.success < 0 && ![1001, 1002, 1003, 1004].contains(request.action)) {
-            manageLoginStep(response.loginStep);
-          }
+      if (manageLoginStep != null) {
+        if (response.success < 0 && ![1001, 1002, 1003, 1004].contains(request.action)) {
+          manageLoginStep(response.loginStep);
         }
       }
 
       // save response to storage if it has save_local_duration parameter
       if (response.hasData &&
           response.containsKey('save_local_duration') &&
-          response.data!['save_local_duration'] > 0 &&
-          Res is! Response) {
+          response.data!['save_local_duration'] > 0) {
         StorageUtil.putString(
           storageKey,
           jsonEncode(<String, dynamic>{...(response.data ?? {}), 'expires_at': response.expiresAt}),
@@ -166,15 +171,15 @@ class Api extends Equatable {
     }
   }
 
-  Future<Res> subscribePublic<Res extends Response>(String event) {
+  Future<BaseResponse<DM>> subscribePublic<DM extends DataModel>(String event) {
     assert(connector is ApexSocket);
 
-    Completer<Res> completer = Completer();
+    Completer<BaseResponse<DM>> completer = Completer<BaseResponse<DM>>();
     (connector as ApexSocket).socket.on(event, (data) {
       try {
         final json = jsonDecode(data);
         if (!completer.isCompleted) {
-          completer.complete(models[Res]!(json) as Res);
+          completer.complete(BaseResponse(data: json, model: models[DM]!(json) as DM));
         }
       } on FormatException {
         completer.completeError(ServerErrorException('Could not parse server response!'));
@@ -195,18 +200,18 @@ class Api extends Equatable {
     return completer.future;
   }
 
-  Future<bool> join<Res extends Response>(JoinGroupRequest joinRequest,
+  Future<bool> join<DM extends DataModel>(JoinGroupRequest joinRequest,
       {VoidCallback? onStart,
-      StreamSocket<Res>? stream,
-      SocketJoinController<Res>? controller,
-      void Function(Res res)? onListen,
+      StreamSocket<BaseResponse<DM>>? stream,
+      SocketJoinController<BaseResponse<DM>>? controller,
+      void Function(BaseResponse<DM> res)? onListen,
       bool? showProgress,
       bool? showRetry,
       LoginStepManager? loginStepManager}) async {
     assert(connector is ApexSocket);
 
     try {
-      final response = await request<Res>(joinRequest,
+      final response = await request<DM>(joinRequest,
           onStart: onStart,
           showRetry: showRetry,
           showProgress: showProgress,
@@ -214,7 +219,7 @@ class Api extends Equatable {
 
       if (joinRequest.groupName != null) {
         if (response.hasData) {
-          subscribePublic<Res>(
+          subscribePublic<DM>(
             response.data!['event_name'],
           ).then((data) {
             if (stream != null) stream.addResponse(data);
@@ -250,7 +255,7 @@ class Api extends Equatable {
     }
   }
 
-  Future<Res> uploadFile<Res extends Response>(
+  Future<BaseResponse<DM>> uploadFile<DM extends DataModel>(
     Request request, {
     String languageCode = 'EN',
     String? fileName,
@@ -262,7 +267,7 @@ class Api extends Equatable {
     ValueChanged<double>? onProgress,
     ValueChanged<VoidCallback>? cancelToken,
     VoidCallback? onStart,
-    OnSuccess<Res>? onSuccess,
+    OnSuccess<DM>? onSuccess,
     OnConnectionError? onError,
   }) async {
     String? fingerprint = ApexApiDb.getFingerprint();
@@ -283,7 +288,7 @@ class Api extends Equatable {
         'token': ApexApiDb.getToken(),
     });
 
-    return connector.uploadFile<Res>(
+    return connector.uploadFile<DM>(
       request,
       fileName: fileName,
       fileKey: fileKey,

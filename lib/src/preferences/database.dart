@@ -27,7 +27,13 @@ class ApexApiDb {
     html.document.cookie = 'token=\'\';domain=$cookieDomain;path=/';
   }
 
-  static String? getToken() => StorageUtil.getString(tokenKey, defValue: null);
+  static String? getToken() {
+    final token = StorageUtil.getString(tokenKey, defValue: null);
+    if (cookieDomain.isNotEmpty && token != null && token.isNotEmpty) {
+      html.document.cookie = 'token=$token;domain=$cookieDomain;path=/';
+    }
+    return token;
+  }
 
   static void setFingerprint(String fingerprint) =>
       StorageUtil.putString(fingerprintKey, fingerprint);

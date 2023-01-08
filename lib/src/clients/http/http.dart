@@ -2,8 +2,6 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:apex_api/src/models/request.dart';
-import 'package:apex_api/src/models/response.dart';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/io_client.dart';
@@ -11,10 +9,7 @@ import 'package:http_parser/http_parser.dart';
 
 import '../../../apex_api.dart';
 import '../../cipher/crypto.dart';
-import '../../exceptions/server_error_exception.dart';
-import '../../exceptions/server_exception.dart';
 import '../../multipart_request.dart';
-import '../connector.dart';
 import 'browser_client.dart' if (dart.library.html) 'package:http/browser_client.dart';
 
 class Http extends Connector {
@@ -33,16 +28,11 @@ class Http extends Connector {
   }
 
   @override
-  Future<Res> send<Res extends Response>(Request request, {
+  Future<BaseResponse<DM>> send<DM extends DataModel>(
+    Request request, {
     bool? showProgress,
     bool? showRetry,
   }) async {
-    // client ??= kIsWeb
-    //     ? BrowserClient()
-    //     : IOClient(HttpClient()..connectionTimeout = config.connectionTimeout);
-    // client = IOClient(HttpClient()..connectionTimeout = config.connectionTimeout);
-    // client ??= HttpClient()..connectionTimeout = config.connectionTimeout;
-
     final crypto = Crypto(config.secretKey, config.publicKey);
 
     if (config.debugMode) {
@@ -74,11 +64,12 @@ class Http extends Connector {
           'Could not get the server response! something went wrong!',
         ));
       }
-      return Response(null,
+      return BaseResponse<DM>(
+          data: null,
           error: ServerException(
               message: 'Could not parse server response! Here is the reason : \r\n$e}',
               code: response != null ? response.statusCode.toString() : '-1'),
-          errorMessage: '$e\r\n$s') as Res;
+          errorMessage: '$e\r\n$s');
     }
 
     if (showProgress == true) hideProgressDialog();
@@ -102,25 +93,34 @@ class Http extends Connector {
         }
 
         try {
-          final res = responseModels[Res]!(jsonDecode(responseMessage)) as Res;
-          handleMessage(res);
-          return res;
+          final decodedResponse = jsonDecode(responseMessage);
+          if (decodedResponse['success'] == 1) {
+            final res = BaseResponse<DM>(
+              data: decodedResponse,
+              model: responseModels[DM]!(decodedResponse) as DM,
+            );
+            handleMessage(res);
+            return res;
+          } else {
+            final res = BaseResponse<DM>(data: decodedResponse);
+            handleMessage(res);
+            return res;
+          }
         } on FormatException {
           if (showRetry == true) {
             showRetryDialog(ServerErrorException('Could not parse server response! wanna retry?'));
           }
-          return Response(null, error: ServerErrorException('Could not parse server response!'))
-              as Res;
+          return BaseResponse<DM>(error: ServerErrorException('Could not parse server response!'));
         }
       } else {
         if (showRetry == true) {
           showRetryDialog(ServerException(
               message: 'Could not parse server response!', code: response.statusCode.toString()));
         }
-        return Response(null,
+        return BaseResponse<DM>(
             error: ServerException(
                 message: 'Could not parse server response!', code: response.statusCode.toString()),
-            errorMessage: '${response.statusCode}') as Res;
+            errorMessage: '${response.statusCode}');
       }
     } else {
       if (showRetry == true) {
@@ -128,10 +128,10 @@ class Http extends Connector {
           'Server response is null! This may be because of your internet connection or host being inaccessible',
         ));
       }
-      return Response(null,
+      return BaseResponse<DM>(
           error: ServerErrorException(
-            'Server response is null! This may be because of your internet connection or host being inaccessible',
-          )) as Res;
+        'Server response is null! This may be because of your internet connection or host being inaccessible',
+      ));
     }
   }
 
@@ -199,7 +199,8 @@ class Http extends Connector {
   }
 
   @override
-  Future<Res> uploadFile<Res extends Response>(Request request, {
+  Future<BaseResponse<DM>> uploadFile<DM extends DataModel>(
+    Request request, {
     String? fileName,
     String fileKey = 'file',
     String? filePath,
@@ -209,7 +210,7 @@ class Http extends Connector {
     ValueChanged<double>? onProgress,
     ValueChanged<VoidCallback>? cancelToken,
     VoidCallback? onStart,
-    OnSuccess<Res>? onSuccess,
+    OnSuccess<DM>? onSuccess,
     OnConnectionError? onError,
   }) async {
     if (onStart != null) {
@@ -258,12 +259,19 @@ class Http extends Connector {
 
         try {
           var jsonResponse = jsonDecode(responseBody);
-          final response = responseModels[Res]!(jsonResponse) as Res;
-          handleMessage(response);
-          if (onSuccess != null) {
-            onSuccess(response);
+          if (jsonResponse['success'] == 1) {
+            final response = BaseResponse(
+              data: jsonResponse,
+              model: responseModels[DM]!(jsonResponse) as DM,
+            );
+            handleMessage(response);
+            if (onSuccess != null) {
+              onSuccess(response);
+            }
+            return response;
+          } else {
+            return BaseResponse(data: jsonResponse);
           }
-          return response;
         } on FormatException catch (e) {
           final exception = ServerErrorException('Could not parse server response! wanna retry?');
           if (showRetry == true) {
@@ -272,7 +280,7 @@ class Http extends Connector {
           if (onError != null) {
             onError(exception, e.toString());
           }
-          return Response(null, error: exception) as Res;
+          return BaseResponse(error: exception);
         }
       } else {
         final exception = ServerException(
@@ -283,7 +291,7 @@ class Http extends Connector {
         if (onError != null) {
           onError(exception, response.statusCode);
         }
-        return Response(null, error: exception, errorMessage: '${response.statusCode}') as Res;
+        return BaseResponse(error: exception, errorMessage: '${response.statusCode}');
       }
     } catch (e) {
       if (showProgress == true) hideProgressDialog();
@@ -291,7 +299,7 @@ class Http extends Connector {
       if (onError != null) {
         onError(exception, e.toString());
       }
-      return Response(null, error: exception, errorMessage: '-1 ($e)') as Res;
+      return BaseResponse(error: exception, errorMessage: '-1 ($e)');
     }
   }
 

@@ -5,7 +5,7 @@ class JsonChecker {
       {List<T>? defValue, required T Function(dynamic e) reviver}) {
     if (data == null) return defValue;
     if (data.containsKey(key) && data[key] != null) {
-      return data[key] != null ? (data[key] as List).map((e) => reviver(e)).toList() : defValue;
+      return data[key] is List ? (data[key] as List).map((e) => reviver(e)).toList() : defValue;
     }
     return defValue;
   }

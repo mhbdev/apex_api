@@ -35,19 +35,14 @@ class Province {
   }
 }
 
-class FetchProvinces extends Response {
+class FetchProvinces extends DataModel {
   final List<Province> provinces;
 
-  FetchProvinces(this.provinces, super.data);
-
-  factory FetchProvinces.fromJson(Json json) {
-    return FetchProvinces(
-        JsonChecker.optList<Province>(
+  FetchProvinces.fromJson(Map<String, dynamic> json)
+      : provinces = JsonChecker.optList<Province>(
           json,
           'provinces',
           defValue: [],
           reviver: (e) => Province.fromJson(e),
-        )!,
-        json);
-  }
+        )!;
 }

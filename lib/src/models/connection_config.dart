@@ -12,6 +12,7 @@ class ApiConfig extends Equatable {
     this.windowsKey,
     this.privateVersion = 1,
     this.publicVersion = 1,
+    this.appVersion = '1',
     this.options,
     this.port,
     this.debugMode = false,
@@ -49,6 +50,8 @@ class ApiConfig extends Equatable {
   final Duration connectionTimeout;
 
   final OnTimeout? onTimeout;
+
+  final String appVersion;
 
   String? get secretKey => encrypt
       ? (kIsWeb
@@ -95,25 +98,29 @@ class ApiConfig extends Equatable {
       Duration? uploadTimeout,
       Duration? requestTimeout,
       bool? useSocket,
-      bool? useMocks}) {
-    return ApiConfig(
-      host ?? this.host,
-      useMocks: useMocks ?? this.useMocks,
-      useSocket: useSocket ?? this.useSocket,
-      debugMode: debugMode ?? this.debugMode,
-      webKey: webKey ?? this.webKey,
-      androidKey: androidKey ?? this.androidKey,
-      iosKey: iosKey ?? this.iosKey,
-      windowsKey: windowsKey ?? this.windowsKey,
-      eventName: eventName ?? this.eventName,
-      namespace: namespace ?? this.namespace,
-      options: options ?? this.options,
-      port: port ?? this.port,
-      privateVersion: privateVersion ?? this.privateVersion,
-      publicVersion: publicVersion ?? this.publicVersion,
-      requestTimeout: requestTimeout ?? this.requestTimeout,
-      uploadTimeout: uploadTimeout ?? this.uploadTimeout,
-    );
+      bool? useMocks,
+      Duration? connectionTimeout,
+      String? appVersion,
+      OnTimeout? onTimeout}) {
+    return ApiConfig(host ?? this.host,
+        useMocks: useMocks ?? this.useMocks,
+        useSocket: useSocket ?? this.useSocket,
+        debugMode: debugMode ?? this.debugMode,
+        webKey: webKey ?? this.webKey,
+        androidKey: androidKey ?? this.androidKey,
+        iosKey: iosKey ?? this.iosKey,
+        windowsKey: windowsKey ?? this.windowsKey,
+        eventName: eventName ?? this.eventName,
+        namespace: namespace ?? this.namespace,
+        options: options ?? this.options,
+        port: port ?? this.port,
+        privateVersion: privateVersion ?? this.privateVersion,
+        publicVersion: publicVersion ?? this.publicVersion,
+        requestTimeout: requestTimeout ?? this.requestTimeout,
+        uploadTimeout: uploadTimeout ?? this.uploadTimeout,
+        appVersion: appVersion ?? this.appVersion,
+        connectionTimeout: connectionTimeout ?? this.connectionTimeout,
+        onTimeout: onTimeout ?? this.onTimeout);
   }
 
   @override

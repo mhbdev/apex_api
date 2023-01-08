@@ -6,7 +6,7 @@ import '../preferences/storage_util.dart';
 
 enum Method { post, get }
 
-abstract class Request {
+abstract class Request extends Equatable {
   final String? groupName;
   final bool isPublic;
   final bool needCredentials;
@@ -99,16 +99,16 @@ abstract class Request {
     return finalResult;
   }
 
-  Future<Res> send<Res extends Response>(
+  Future<BaseResponse<DM>> send<DM extends DataModel>(
     BuildContext context, {
     bool? showProgress,
     bool? showRetry,
     VoidCallback? onStart,
-    OnSuccess<Res>? onSuccess,
+    OnSuccess<DM>? onSuccess,
     OnConnectionError? onError,
     bool ignoreExpireTime = false,
   }) {
-    return context.api.request<Res>(this,
+    return context.api.request<DM>(this,
         showProgress: showProgress,
         showRetry: showRetry,
         onStart: onStart,
@@ -117,12 +117,12 @@ abstract class Request {
         ignoreExpireTime: ignoreExpireTime);
   }
 
-  Future<Res> startUpload<Res extends Response>(
+  Future<BaseResponse> startUpload<DM extends DataModel>(
     BuildContext context, {
     bool? showProgress,
     // bool? showRetry,
     VoidCallback? onStart,
-    OnSuccess<Res>? onSuccess,
+    OnSuccess<DM>? onSuccess,
     OnConnectionError? onError,
     bool ignoreExpireTime = false,
     ValueChanged<VoidCallback>? cancelToken,
@@ -132,7 +132,7 @@ abstract class Request {
     Uint8List? blobData,
     ValueChanged<double>? onProgress,
   }) {
-    return context.api.uploadFile<Res>(
+    return context.api.uploadFile<DM>(
       this,
       // showRetry: showRetry,
       showProgress: showProgress,
@@ -146,6 +146,9 @@ abstract class Request {
       onError: onError,
     );
   }
+
+  @override
+  List<Object?> get props => [action, json];
 }
 
 class SimpleRequest extends Request {

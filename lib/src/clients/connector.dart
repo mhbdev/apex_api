@@ -39,7 +39,8 @@ abstract class Connector extends MessageNotifier {
 
   void init();
 
-  Future<Res> send<Res extends Response>(Request request, {bool? showProgress, bool? showRetry});
+  Future<BaseResponse<DM>> send<DM extends DataModel>(Request request,
+      {bool? showProgress, bool? showRetry});
 
   void showProgressDialog() => notifyListeners(ConnectorTag.showProgress);
 
@@ -50,9 +51,10 @@ abstract class Connector extends MessageNotifier {
 
   void hideRetryDialog() => notifyListeners(ConnectorTag.hideRetryDialog);
 
-  void handleMessage(Response message) => notifyListeners(ConnectorTag.handleMessage, message);
+  void handleMessage(BaseResponse response) =>
+      notifyListeners(ConnectorTag.handleMessage, response);
 
-  Future<Res> uploadFile<Res extends Response>(
+  Future<BaseResponse<DM>> uploadFile<DM extends DataModel>(
     Request request, {
     String? fileName,
     String fileKey = 'file',
@@ -63,7 +65,7 @@ abstract class Connector extends MessageNotifier {
     ValueChanged<double>? onProgress,
     ValueChanged<VoidCallback>? cancelToken,
     VoidCallback? onStart,
-    OnSuccess<Res>? onSuccess,
+    OnSuccess<DM>? onSuccess,
     OnConnectionError? onError,
   });
 }

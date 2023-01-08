@@ -261,7 +261,7 @@ class ApexSocket extends Connector {
   }
 
   @override
-  Future<Res> send<Res extends Response>(
+  Future<BaseResponse<DM>> send<DM extends DataModel>(
     Request request, {
     bool? showProgress,
     bool? showRetry,
@@ -270,30 +270,31 @@ class ApexSocket extends Connector {
 
     if (config.debugMode) {
       if (kDebugMode) {
-        print('[ZIP-REQUEST] [$Res] [${DateTime.now()}] [${await request.zip}]');
+        print('[ZIP-REQUEST] [$DM] [${DateTime.now()}] [${await request.zip}]');
       }
     }
 
-    Future<Res> response;
+    Future<BaseResponse<DM>> response;
     if (status == ConnectionStatus.connected) {
-      response = _emit<Res>(crypto, request, showProgress: showProgress, showRetry: showRetry);
+      response = _emit<DM>(crypto, request, showProgress: showProgress, showRetry: showRetry);
     } else {
       await connectAsync();
-      response = _emit<Res>(crypto, request, showProgress: showProgress, showRetry: showRetry);
+      response = _emit<DM>(crypto, request, showProgress: showProgress, showRetry: showRetry);
     }
 
     if (config.debugMode) {
       if (kDebugMode) {
-        print('[ZIP-RESPONSE] [$Res] [${DateTime.now()}] [${(await response).data}]');
+        // TODO : uncomment
+        // print('[ZIP-RESPONSE] [$Res] [${DateTime.now()}] [${(await response).data}]');
       }
     }
 
     return response;
   }
 
-  Future<Res> _emit<Res extends Response>(Crypto crypto, Request request,
+  Future<BaseResponse<DM>> _emit<DM extends DataModel>(Crypto crypto, Request request,
       {bool? showProgress, bool? showRetry}) async {
-    Completer<Res> completer = Completer();
+    Completer<BaseResponse<DM>> completer = Completer<BaseResponse<DM>>();
 
     if (showProgress == true) {
       showProgressDialog();
@@ -305,7 +306,7 @@ class ApexSocket extends Connector {
           hideProgressDialog();
         }
         try {
-          _handleResponse<Res>(completer, request, data, showRetry: showRetry);
+          _handleResponse<DM>(completer, request, data, showRetry: showRetry);
         } catch (e, s) {
           completer.completeError(e, s);
         }
@@ -316,7 +317,7 @@ class ApexSocket extends Connector {
           hideProgressDialog();
         }
         try {
-          _handleResponse<Res>(completer, request, data, showRetry: showRetry);
+          _handleResponse<DM>(completer, request, data, showRetry: showRetry);
         } catch (e, s) {
           completer.completeError(e, s);
         }
@@ -326,8 +327,8 @@ class ApexSocket extends Connector {
     return completer.future;
   }
 
-  void _handleResponse<Res extends Response>(
-      Completer<Res> completer, Request request, String? data,
+  void _handleResponse<DM extends DataModel>(
+      Completer<BaseResponse<DM>> completer, Request request, String? data,
       {bool? showRetry}) {
     if (data == null || data == 'null') {
       completer.completeError(ServerErrorException(
@@ -344,7 +345,9 @@ class ApexSocket extends Connector {
     try {
       final parsed = jsonDecode(data);
       if (parsed != null) {
-        final res = responseModels[Res]!(config.useMocks ? request.responseMock : parsed) as Res;
+        final res = BaseResponse(
+            data: parsed,
+            model: responseModels[DM]!(config.useMocks ? request.responseMock : parsed) as DM);
 
         if (!completer.isCompleted) {
           completer.complete(res);
@@ -357,7 +360,8 @@ class ApexSocket extends Connector {
     }
   }
 
-  void _couldNotParseException<Res extends Response>(Completer<Res> completer, bool? showRetry) {
+  void _couldNotParseException<DM extends DataModel>(
+      Completer<BaseResponse<DM>> completer, bool? showRetry) {
     if (showRetry == true) {
       showRetryDialog(ServerErrorException('Could not parse server response! wanna retry?'));
     }
@@ -370,7 +374,7 @@ class ApexSocket extends Connector {
   }
 
   @override
-  Future<Res> uploadFile<Res extends Response>(
+  Future<BaseResponse<DM>> uploadFile<DM extends DataModel>(
     Request request, {
     String? fileName,
     String fileKey = 'file',
@@ -380,7 +384,7 @@ class ApexSocket extends Connector {
     bool? showRetry,
     ValueChanged<double>? onProgress,
     ValueChanged<VoidCallback>? cancelToken,
-    OnSuccess<Res>? onSuccess,
+    OnSuccess<DM>? onSuccess,
     OnConnectionError? onError,
     VoidCallback? onStart,
   }) {

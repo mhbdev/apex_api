@@ -47,7 +47,7 @@ class ServerWrapper extends StatefulWidget {
   final RetryBuilder? retryBuilder;
   final LoginStepManager loginStepManager;
   final bool showConnectionBadge;
-  final ValueChanged<Response>? handleMessage;
+  final ValueChanged<BaseResponse<DataModel>>? handleMessage;
 
   /// You can obtain this globalKey like this:
   /// add this snippet at the top of your MaterialApp builder method
@@ -116,12 +116,12 @@ class ServerWrapperState extends State<ServerWrapper> with WidgetLoadMixin, Moun
 
   Connector get connector => widget.api.connector;
 
-  Future<Res> request<Res extends Response>(
+  Future<BaseResponse<DM>> request<DM extends DataModel>(
     Request request, {
     bool? showProgress,
     bool? showRetry,
     VoidCallback? onStart,
-    OnSuccess<Res>? onSuccess,
+    OnSuccess<DM>? onSuccess,
     OnConnectionError? onError,
     bool ignoreExpireTime = false,
   }) {
@@ -133,7 +133,7 @@ class ServerWrapperState extends State<ServerWrapper> with WidgetLoadMixin, Moun
     _onError = onError;
     _ignoreExpireTime = ignoreExpireTime;
 
-    return widget.api.request<Res>(
+    return widget.api.request<DM>(
       request,
       languageCode: widget.locale.languageCode,
       showProgress: showProgress,
@@ -146,16 +146,16 @@ class ServerWrapperState extends State<ServerWrapper> with WidgetLoadMixin, Moun
     );
   }
 
-  Future<bool> join<Res extends Response>(
+  Future<bool> join<DM extends DataModel>(
     JoinGroupRequest joinRequest, {
     VoidCallback? onStart,
-    StreamSocket<Res>? stream,
-    SocketJoinController<Res>? controller,
-    void Function(Res res)? onListen,
+    StreamSocket<BaseResponse<DM>>? stream,
+    SocketJoinController<BaseResponse<DM>>? controller,
+    void Function(BaseResponse<DM> res)? onListen,
     bool? showProgress,
     bool? showRetry,
   }) {
-    return widget.api.join<Res>(joinRequest,
+    return widget.api.join<DM>(joinRequest,
         showProgress: showProgress,
         showRetry: showRetry,
         onStart: onStart,
@@ -165,9 +165,9 @@ class ServerWrapperState extends State<ServerWrapper> with WidgetLoadMixin, Moun
         loginStepManager: widget.loginStepManager);
   }
 
-  Future<Res> subscribePublic<Res extends Response>(String event,
-      [OnSuccess<Res>? onSuccess]) async {
-    final futureResponse = widget.api.subscribePublic<Res>(event);
+  Future<BaseResponse<DM>> subscribePublic<DM extends DataModel>(String event,
+      [OnSuccess<DM>? onSuccess]) async {
+    final futureResponse = widget.api.subscribePublic<DM>(event);
     if (onSuccess != null) {
       onSuccess(await futureResponse);
     }
@@ -178,7 +178,7 @@ class ServerWrapperState extends State<ServerWrapper> with WidgetLoadMixin, Moun
     widget.api.unsubscribePublic(event);
   }
 
-  Future<Res> uploadFile<Res extends Response>(
+  Future<BaseResponse<DM>> uploadFile<DM extends DataModel>(
     Request request, {
     String? fileName,
     String fileKey = 'file',
@@ -186,7 +186,7 @@ class ServerWrapperState extends State<ServerWrapper> with WidgetLoadMixin, Moun
     Uint8List? blobData,
     bool? showProgress,
     // bool? showRetry,
-    OnSuccess<Res>? onSuccess,
+    OnSuccess<DM>? onSuccess,
     OnConnectionError? onError,
     ValueChanged<double>? onProgress,
     ValueChanged<VoidCallback>? cancelToken,
@@ -200,7 +200,7 @@ class ServerWrapperState extends State<ServerWrapper> with WidgetLoadMixin, Moun
     // _onSuccess = onSuccess;
     // _onError = onError;
 
-    return widget.api.uploadFile<Res>(
+    return widget.api.uploadFile<DM>(
       request,
       languageCode: widget.locale.languageCode,
       showProgress: showProgress,
@@ -326,11 +326,11 @@ class ServerWrapperState extends State<ServerWrapper> with WidgetLoadMixin, Moun
         builder: builder);
   }
 
-  void _onRetry<Res extends Response>() {
+  void _onRetry<DM extends DataModel>() {
     if (_request != null) {
       _pop();
       isShowingRetry = false;
-      request<Res>(
+      request<DM>(
         _request!,
         showRetry: _showRetry,
         showProgress: _showProgress,

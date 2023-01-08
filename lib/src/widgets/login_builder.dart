@@ -6,10 +6,11 @@ class LoginBuilder extends StatefulWidget {
       BuildContext context,
       LoginStep step,
       bool isLoading,
-      Future<Response> Function(String countryCode, String username) onDetectUserStatus,
-      Future<Response> Function(String countryCode, String username, String password) onLogin,
-      Future<Response> Function(String countryCode, String username) onForgotPassword,
-      Future<Response> Function(String countryCode, String username, String password, String otp)
+      Future<BaseResponse> Function(String countryCode, String username) onDetectUserStatus,
+      Future<BaseResponse> Function(String countryCode, String username, String password) onLogin,
+      Future<BaseResponse> Function(String countryCode, String username) onForgotPassword,
+      Future<BaseResponse> Function(
+              String countryCode, String username, String password, String otp)
           onVerify,
       {ValueChanged<LoginStep>? updateStep}) builder;
   final void Function(LoginStep step)? listener;
@@ -35,7 +36,7 @@ class _LoginBuilderState extends State<LoginBuilder> with WidgetLoadMixin, Mount
   @override
   Widget build(BuildContext context) {
     return widget.builder(context, _step, _isLoading, (countryCode, username) async {
-      return DetectUserRequest(countryCode, username).send<Response>(
+      return DetectUserRequest(countryCode, username).send(
         context,
         onStart: () {
           _isLoading = true;
@@ -55,7 +56,7 @@ class _LoginBuilderState extends State<LoginBuilder> with WidgetLoadMixin, Mount
         showRetry: widget.showRetry,
       );
     }, (countryCode, username, password) async {
-      return LoginRequest(countryCode, username, password).send<Response>(
+      return LoginRequest(countryCode, username, password).send(
         context,
         onStart: () {
           _isLoading = true;
@@ -75,7 +76,7 @@ class _LoginBuilderState extends State<LoginBuilder> with WidgetLoadMixin, Mount
         showRetry: widget.showRetry,
       );
     }, (countryCode, username) async {
-      return ForgotPasswordRequest(countryCode, username).send<Response>(
+      return ForgotPasswordRequest(countryCode, username).send(
         context,
         onStart: () {
           _isLoading = true;
@@ -95,7 +96,7 @@ class _LoginBuilderState extends State<LoginBuilder> with WidgetLoadMixin, Mount
         showRetry: widget.showRetry,
       );
     }, (countryCode, username, password, otp) async {
-      return VerifyUserRequest(countryCode, username, password, otp).send<Response>(
+      return VerifyUserRequest(countryCode, username, password, otp).send(
         context,
         onStart: () {
           _isLoading = true;
