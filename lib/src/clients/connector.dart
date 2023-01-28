@@ -25,15 +25,17 @@ abstract class Connector extends MessageNotifier {
   Connector(this.config, this.responseModels)
       : assert(Uri.parse(config.host).isAbsolute, '${config.host} must be a valid url.');
 
-  String get os => kIsWeb
+  String get os => config.debugMode
       ? 'W'
-      : defaultTargetPlatform == TargetPlatform.android
-          ? 'A'
-          : defaultTargetPlatform == TargetPlatform.iOS
-              ? 'I'
-              : defaultTargetPlatform == TargetPlatform.windows
-                  ? 'D'
-                  : 'U';
+      : kIsWeb
+          ? 'W'
+          : defaultTargetPlatform == TargetPlatform.android
+              ? 'A'
+              : defaultTargetPlatform == TargetPlatform.iOS
+                  ? 'I'
+                  : defaultTargetPlatform == TargetPlatform.windows
+                      ? 'D'
+                      : 'U';
 
   bool get isConnected;
 

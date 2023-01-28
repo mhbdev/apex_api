@@ -284,7 +284,7 @@ class ServerWrapperState extends State<ServerWrapper> with WidgetLoadMixin, Moun
                         ),
                         actions: [
                           CupertinoDialogAction(
-                            onPressed: _onRetry,
+                            onPressed: () {},
                             child: Text(
                               widget.locale.languageCode.toUpperCase() == 'FA' ? 'بله' : 'Yes',
                             ),
@@ -330,7 +330,7 @@ class ServerWrapperState extends State<ServerWrapper> with WidgetLoadMixin, Moun
     if (_request != null) {
       _pop();
       isShowingRetry = false;
-      request<DM>(
+      request(
         _request!,
         showRetry: _showRetry,
         showProgress: _showProgress,

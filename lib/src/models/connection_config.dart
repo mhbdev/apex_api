@@ -4,7 +4,8 @@ import 'package:flutter/foundation.dart';
 class ApiConfig extends Equatable {
   const ApiConfig(
     this.host, {
-    this.namespace = 'request',
+    this.handlerNamespace = '/',
+    this.namespace = 'data',
     this.eventName = 'message',
     this.iosKey,
     this.webKey,
@@ -53,8 +54,10 @@ class ApiConfig extends Equatable {
 
   final String appVersion;
 
+  final String handlerNamespace;
+
   String? get secretKey => encrypt
-      ? (kIsWeb
+      ? (kIsWeb || debugMode
           ? webKey!.secretKey
           : (defaultTargetPlatform == TargetPlatform.android
               ? androidKey!.secretKey
@@ -63,8 +66,9 @@ class ApiConfig extends Equatable {
                   : iosKey!.secretKey)))
       : null;
 
-  String? get publicKey => encrypt
-      ? (kIsWeb
+  String? get publicKey =>
+      encrypt
+      ? (kIsWeb || debugMode
           ? webKey!.publicKey
           : (defaultTargetPlatform == TargetPlatform.android
               ? androidKey!.publicKey
@@ -73,7 +77,7 @@ class ApiConfig extends Equatable {
                   : iosKey!.publicKey)))
       : null;
 
-  bool get encrypt => kIsWeb
+  bool get encrypt => kIsWeb || debugMode
       ? webKey != null
       : (defaultTargetPlatform == TargetPlatform.android
           ? androidKey != null
@@ -101,26 +105,30 @@ class ApiConfig extends Equatable {
       bool? useMocks,
       Duration? connectionTimeout,
       String? appVersion,
-      OnTimeout? onTimeout}) {
-    return ApiConfig(host ?? this.host,
-        useMocks: useMocks ?? this.useMocks,
-        useSocket: useSocket ?? this.useSocket,
-        debugMode: debugMode ?? this.debugMode,
-        webKey: webKey ?? this.webKey,
-        androidKey: androidKey ?? this.androidKey,
-        iosKey: iosKey ?? this.iosKey,
-        windowsKey: windowsKey ?? this.windowsKey,
-        eventName: eventName ?? this.eventName,
-        namespace: namespace ?? this.namespace,
-        options: options ?? this.options,
-        port: port ?? this.port,
-        privateVersion: privateVersion ?? this.privateVersion,
-        publicVersion: publicVersion ?? this.publicVersion,
-        requestTimeout: requestTimeout ?? this.requestTimeout,
-        uploadTimeout: uploadTimeout ?? this.uploadTimeout,
-        appVersion: appVersion ?? this.appVersion,
-        connectionTimeout: connectionTimeout ?? this.connectionTimeout,
-        onTimeout: onTimeout ?? this.onTimeout);
+      OnTimeout? onTimeout,
+      String? handlerNamespace}) {
+    return ApiConfig(
+      host ?? this.host,
+      useMocks: useMocks ?? this.useMocks,
+      useSocket: useSocket ?? this.useSocket,
+      debugMode: debugMode ?? this.debugMode,
+      webKey: webKey ?? this.webKey,
+      androidKey: androidKey ?? this.androidKey,
+      iosKey: iosKey ?? this.iosKey,
+      windowsKey: windowsKey ?? this.windowsKey,
+      eventName: eventName ?? this.eventName,
+      namespace: namespace ?? this.namespace,
+      options: options ?? this.options,
+      port: port ?? this.port,
+      privateVersion: privateVersion ?? this.privateVersion,
+      publicVersion: publicVersion ?? this.publicVersion,
+      requestTimeout: requestTimeout ?? this.requestTimeout,
+      uploadTimeout: uploadTimeout ?? this.uploadTimeout,
+      appVersion: appVersion ?? this.appVersion,
+      connectionTimeout: connectionTimeout ?? this.connectionTimeout,
+      onTimeout: onTimeout ?? this.onTimeout,
+      handlerNamespace: handlerNamespace ?? this.handlerNamespace,
+    );
   }
 
   @override

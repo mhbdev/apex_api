@@ -1,21 +1,25 @@
 import 'package:apex_api/apex_api.dart';
 import 'package:flutter/material.dart';
 
+enum LoginType { phone, email }
+
 class LoginBuilder extends StatefulWidget {
   final Widget Function(
       BuildContext context,
       LoginStep step,
       bool isLoading,
-      Future<BaseResponse> Function(String countryCode, String username) onDetectUserStatus,
-      Future<BaseResponse> Function(String countryCode, String username, String password) onLogin,
-      Future<BaseResponse> Function(String countryCode, String username) onForgotPassword,
-      Future<BaseResponse> Function(
-              String countryCode, String username, String password, String otp)
+      Future<BaseResponse> Function(String username, {String? countryCode}) onDetectUserStatus,
+      Future<BaseResponse> Function(String username, String password, {String? countryCode})
+          onLogin,
+      Future<BaseResponse> Function(String username, {String? countryCode}) onForgotPassword,
+      Future<BaseResponse> Function(String username, String password, String otp,
+              {String? countryCode})
           onVerify,
       {ValueChanged<LoginStep>? updateStep}) builder;
   final void Function(LoginStep step)? listener;
   final bool showProgress;
   final bool showRetry;
+  final LoginType loginType;
 
   const LoginBuilder({
     Key? key,
@@ -23,6 +27,7 @@ class LoginBuilder extends StatefulWidget {
     this.showProgress = false,
     this.showRetry = false,
     this.listener,
+    this.loginType = LoginType.phone,
   }) : super(key: key);
 
   @override
@@ -35,8 +40,11 @@ class _LoginBuilderState extends State<LoginBuilder> with WidgetLoadMixin, Mount
 
   @override
   Widget build(BuildContext context) {
-    return widget.builder(context, _step, _isLoading, (countryCode, username) async {
-      return DetectUserRequest(countryCode, username).send(
+    return widget.builder(context, _step, _isLoading, (username, {countryCode}) async {
+      return (widget.loginType == LoginType.phone && countryCode != null
+              ? DetectUserRequest.phone(countryCode, username)
+              : DetectUserRequest.email(username, countryCode: countryCode))
+          .send(
         context,
         onStart: () {
           _isLoading = true;
@@ -55,8 +63,11 @@ class _LoginBuilderState extends State<LoginBuilder> with WidgetLoadMixin, Mount
         showProgress: widget.showProgress,
         showRetry: widget.showRetry,
       );
-    }, (countryCode, username, password) async {
-      return LoginRequest(countryCode, username, password).send(
+    }, (username, password, {countryCode}) async {
+      return (widget.loginType == LoginType.phone && countryCode != null
+              ? LoginRequest.phone(countryCode, username, password)
+              : LoginRequest.email(username, password, countryCode: countryCode))
+          .send(
         context,
         onStart: () {
           _isLoading = true;
@@ -75,8 +86,11 @@ class _LoginBuilderState extends State<LoginBuilder> with WidgetLoadMixin, Mount
         showProgress: widget.showProgress,
         showRetry: widget.showRetry,
       );
-    }, (countryCode, username) async {
-      return ForgotPasswordRequest(countryCode, username).send(
+    }, (username, {countryCode}) async {
+      return (widget.loginType == LoginType.phone && countryCode != null
+              ? ForgotPasswordRequest.phone(countryCode, username)
+              : ForgotPasswordRequest.email(username, countryCode: countryCode))
+          .send(
         context,
         onStart: () {
           _isLoading = true;
@@ -95,8 +109,11 @@ class _LoginBuilderState extends State<LoginBuilder> with WidgetLoadMixin, Mount
         showProgress: widget.showProgress,
         showRetry: widget.showRetry,
       );
-    }, (countryCode, username, password, otp) async {
-      return VerifyUserRequest(countryCode, username, password, otp).send(
+    }, (username, password, otp, {countryCode}) async {
+      return (widget.loginType == LoginType.phone && countryCode != null
+              ? VerifyUserRequest.phone(countryCode, username, password, otp)
+              : VerifyUserRequest.email(username, password, otp, countryCode: countryCode))
+          .send(
         context,
         onStart: () {
           _isLoading = true;

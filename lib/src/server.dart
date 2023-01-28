@@ -85,13 +85,16 @@ class Api extends Equatable {
     String? fingerprint = ApexApiDb.getFingerprint();
     if (fingerprint == null) {
       // TODO : suitable exception is needed
-      return Future.error(BadRequestException());
+      return Future.error(BadRequestException('Could not find user\'s fingerprint!'));
     }
 
     final imei = ApexApiDb.getImei();
     final imsi = ApexApiDb.getImsi();
     request.addParams({
-      'additional': {if (imei != null) 'imei': imei, if (imsi != null) 'imsi': imsi},
+      if ([1001, 1002, 1003, 1004].contains(request.action)) ...{
+        'additional': {if (imei != null) 'imei': imei, if (imsi != null) 'imsi': imsi},
+        'namespace': config.handlerNamespace,
+      },
       'fingerprint': fingerprint,
       'language': languageCode.toUpperCase(),
       if (ApexApiDb.isAuthenticated &&
@@ -273,13 +276,16 @@ class Api extends Equatable {
     String? fingerprint = ApexApiDb.getFingerprint();
     if (fingerprint == null) {
       // TODO : suitable exception is needed
-      return Future.error(BadRequestException());
+      return Future.error(BadRequestException('Could not find user\'s fingerprint!'));
     }
 
     final imei = ApexApiDb.getImei();
     final imsi = ApexApiDb.getImsi();
     request.addParams({
-      'additional': {if (imei != null) 'imei': imei, if (imsi != null) 'imsi': imsi},
+      if ([1001, 1002, 1003, 1004].contains(request.action)) ...{
+        'additional': {if (imei != null) 'imei': imei, if (imsi != null) 'imsi': imsi},
+        'namespace': config.handlerNamespace,
+      },
       'fingerprint': fingerprint,
       'language': languageCode.toUpperCase(),
       if (ApexApiDb.isAuthenticated &&

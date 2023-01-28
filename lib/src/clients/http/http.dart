@@ -167,27 +167,37 @@ class Http extends Connector {
     return responseMessage;
   }
 
-  Future<http.Response?> _post(String url,
-      String requestName,
-      String requestMessage, {
-        required timeLimit,
-        onTimeOut,
-        headers,
-        encoding,
-        bool isPrivate = true,
-      }) async {
+  Future<http.Response?> _post(
+    String url,
+    String requestName,
+    String requestMessage, {
+    required timeLimit,
+    onTimeOut,
+    headers,
+    encoding,
+    bool isPrivate = true,
+  }) async {
     var requestBody = {
       'os': os,
       'private': (isPrivate ? 1 : 0),
       'version': (isPrivate ? config.privateVersion : config.publicVersion),
       requestName: requestMessage
     };
-    return client!
-        .post(Uri.parse(url),
-        headers: headers,
-        body: {'request': jsonEncode(requestBody)},
-        encoding: encoding ?? Encoding.getByName('utf-8'))
-        .timeout(timeLimit, onTimeout: onTimeOut);
+    return client != null
+        ? client!
+            .post(Uri.parse(url),
+                headers: headers,
+                body: {'request': jsonEncode(requestBody)},
+                encoding: encoding ?? Encoding.getByName('utf-8'))
+            .timeout(timeLimit, onTimeout: onTimeOut)
+        : http
+            .post(
+              Uri.parse(url),
+              headers: headers,
+              body: {'request': jsonEncode(requestBody)},
+              encoding: encoding ?? Encoding.getByName('utf-8'),
+            )
+            .timeout(timeLimit, onTimeout: onTimeOut);
   }
 
   Future<http.Response?> _get(String url, String requestName, String requestMessage,

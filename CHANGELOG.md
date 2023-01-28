@@ -1,3 +1,16 @@
+## 1.1.6
+
+* HandlerNamespace is used to route users to different handlers of one api (implemented in ApiConfig
+  class)
+
+## 1.1.4
+
+* Fixing wrapper property making it work even if Stream initial data is null
+
+## 1.1.3
+
+* wrapper property now supports response and onRetry method
+
 ## 1.1.2
 
 * Added wrapper widget builder to ReactiveWidget

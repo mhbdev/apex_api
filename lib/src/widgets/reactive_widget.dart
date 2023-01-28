@@ -54,7 +54,9 @@ class ReactiveWidget<DM extends DataModel> extends StatefulWidget {
   final ReactiveController<DM>? controller;
   final void Function(ReactiveState state, Future<BaseResponse<DM>> Function() onRetry,
       {BaseResponse<DM>? response, ReactiveError? error})? listener;
-  final Widget Function(ReactiveState state, Widget child)? wrapper;
+  final Widget Function(
+      ReactiveState state, Widget child, Future<BaseResponse<DM>> Function() onRetry,
+      {BaseResponse<DM>? response})? wrapper;
 
   const ReactiveWidget({
     Key? key,
@@ -97,6 +99,7 @@ class _ReactiveWidgetState<DM extends DataModel> extends State<ReactiveWidget<DM
 
   @override
   Widget build(BuildContext context) {
+    super.build(context);
     return StreamBuilder<ReactiveResponse<DM>>(
       stream: _controller.stream,
       builder: (context, snapshot) {
@@ -118,8 +121,17 @@ class _ReactiveWidgetState<DM extends DataModel> extends State<ReactiveWidget<DM
           return widget.loadingWidget;
         }
 
-        if (widget.wrapper != null && snapshot.hasData && snapshot.data != null) {
-          return widget.wrapper!(snapshot.data!.state, buildChild());
+        if (widget.wrapper != null) {
+          if (snapshot.hasData && snapshot.data != null) {
+            final data = snapshot.data!;
+            if (data.state == ReactiveState.success || data.state == ReactiveState.failure) {
+              return widget.wrapper!(snapshot.data!.state, buildChild(), _sendRequest,
+                  response: data.response);
+            }
+            return widget.wrapper!(snapshot.data!.state, buildChild(), _sendRequest);
+          } else {
+            return widget.wrapper!(ReactiveState.error, buildChild(), _sendRequest);
+          }
         } else {
           return buildChild();
         }

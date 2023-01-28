@@ -31,7 +31,7 @@ class Crypto {
         ),
       )}";
     }
-    return '';
+    return message;
   }
 
   /// Decrypts [message] with AES algorithm
@@ -41,6 +41,6 @@ class Crypto {
     if(_aes != null) {
       return _aes!.decrypt(message);
     }
-    return '';
+    return message;
   }
 }

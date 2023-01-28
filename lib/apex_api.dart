@@ -13,7 +13,10 @@ import 'src/typedefs.dart';
 export 'package:equatable/equatable.dart';
 export 'package:socket_io_client/socket_io_client.dart';
 
+export 'src/cipher/aes.dart';
+export 'src/cipher/crypto.dart';
 export 'src/cipher/models/key_pair.dart';
+export 'src/cipher/rsa.dart';
 export 'src/clients/clients.dart';
 export 'src/clients/connector.dart';
 export 'src/exceptions/exceptions.dart';

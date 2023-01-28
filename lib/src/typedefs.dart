@@ -31,4 +31,4 @@ typedef OnConnectionError = void Function(ServerException exception, Object erro
 typedef OnSuccess<DM extends DataModel> = void Function(BaseResponse<DM> response);
 
 typedef RetryBuilder = Widget Function(
-    BuildContext context, VoidCallback onRetry, VoidCallback close);
+    BuildContext context, void Function<DM extends DataModel>() onRetry, VoidCallback close);
