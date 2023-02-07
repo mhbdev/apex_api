@@ -330,7 +330,7 @@ class ServerWrapperState extends State<ServerWrapper> with WidgetLoadMixin, Moun
     if (_request != null) {
       _pop();
       isShowingRetry = false;
-      request(
+      request<DM>(
         _request!,
         showRetry: _showRetry,
         showProgress: _showProgress,
