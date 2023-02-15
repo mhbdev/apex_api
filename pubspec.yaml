@@ -1,6 +1,6 @@
 name: apex_api
 description: Apex Flutter Connection Api
-version: 1.1.6
+version: 2.0.1
 homepage: https://gitlab.com/1839491/apex_api.git
 
 environment:
@@ -23,6 +23,8 @@ dependencies:
   dartz: ^0.10.1
   platform_device_id: ^1.0.1
   universal_html: ^2.0.8
+  logger: ^1.1.0
+  provider: ^6.0.5
 
 dev_dependencies:
   flutter_test:

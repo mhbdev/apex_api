@@ -25,6 +25,11 @@ class StorageUtil {
     return _preferences;
   }
 
+  static Future<bool> remove(String key) async {
+    if (_preferences == null) return false;
+    return _preferences!.remove(key);
+  }
+
   // get string
   static String? getString(String key, {String? defValue}) {
     if (_preferences == null) return defValue;

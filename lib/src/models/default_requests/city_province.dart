@@ -12,6 +12,14 @@ class City {
       JsonChecker.optString(json, 'name', defValue: 'Unknown')!,
     );
   }
+
+  @override
+  String toString() {
+    return {
+      'id': id,
+      'name': name,
+    }.toString();
+  }
 }
 
 class Province {
@@ -32,6 +40,11 @@ class Province {
         reviver: (e) => City.fromJson(e),
       )!,
     );
+  }
+
+  @override
+  String toString() {
+    return {'id': id, 'name': name, 'cities': cities.toString()}.toString();
   }
 }
 

@@ -5,6 +5,12 @@ class DetectUserRequest extends Request {
   final String? countryCode;
   final String username;
   final Json? mockResponse;
+  final bool useLatestVersion;
+
+  factory DetectUserRequest.old(String countryCode, String phoneNumber, {Json? mockResponse}) {
+    return DetectUserRequest._(int.parse(phoneNumber).toString(),
+        countryCode: countryCode, mockResponse: mockResponse, useLatestVersion: false);
+  }
 
   factory DetectUserRequest.phone(String countryCode, String phoneNumber, {Json? mockResponse}) {
     return DetectUserRequest._(countryCode + int.parse(phoneNumber).toString(),
@@ -15,13 +21,14 @@ class DetectUserRequest extends Request {
     return DetectUserRequest._(email, countryCode: countryCode, mockResponse: mockResponse);
   }
 
-  DetectUserRequest._(this.username, {this.countryCode, this.mockResponse})
+  DetectUserRequest._(this.username,
+      {this.countryCode, this.mockResponse, this.useLatestVersion = true})
       : super(1001, isPublic: false);
 
   @override
   Future<Json> get json async => {
         if (countryCode != null) 'cc': countryCode,
-        'identifier': username,
+        if (useLatestVersion) 'identifier': username else 'username': username,
       };
 
   @override
@@ -35,6 +42,13 @@ class LoginRequest extends Request {
   final String username;
   final String password;
   final Json? mockResponse;
+  final bool useLatestVersion;
+
+  factory LoginRequest.old(String countryCode, String phoneNumber, String password,
+      {Json? mockResponse}) {
+    return LoginRequest._(int.parse(phoneNumber).toString(), password,
+        countryCode: countryCode, mockResponse: mockResponse, useLatestVersion: false);
+  }
 
   factory LoginRequest.phone(String countryCode, String phoneNumber, String password,
       {Json? mockResponse}) {
@@ -47,13 +61,14 @@ class LoginRequest extends Request {
     return LoginRequest._(email, password, countryCode: countryCode, mockResponse: mockResponse);
   }
 
-  LoginRequest._(this.username, this.password, {this.countryCode, this.mockResponse})
+  LoginRequest._(this.username, this.password,
+      {this.countryCode, this.mockResponse, this.useLatestVersion = true})
       : super(1002, isPublic: false);
 
   @override
   Future<Json> get json async => {
         if (countryCode != null) 'cc': countryCode,
-        'identifier': username,
+        if (useLatestVersion) 'identifier': username else 'username': username,
         'password': password,
       };
 
@@ -70,6 +85,19 @@ class VerifyUserRequest extends Request {
   final String otp;
   final String password;
   final Json? mockResponse;
+  final bool useLatestVersion;
+
+  factory VerifyUserRequest.old(String countryCode, String phoneNumber, String password, String otp,
+      {Json? mockResponse}) {
+    return VerifyUserRequest._(
+      int.parse(phoneNumber).toString(),
+      password,
+      otp,
+      countryCode: countryCode,
+      mockResponse: mockResponse,
+      useLatestVersion: false,
+    );
+  }
 
   factory VerifyUserRequest.phone(
       String countryCode, String phoneNumber, String password, String otp,
@@ -94,13 +122,14 @@ class VerifyUserRequest extends Request {
     );
   }
 
-  VerifyUserRequest._(this.username, this.password, this.otp, {this.countryCode, this.mockResponse})
+  VerifyUserRequest._(this.username, this.password, this.otp,
+      {this.countryCode, this.mockResponse, this.useLatestVersion = true})
       : super(1003, isPublic: false);
 
   @override
   Future<Json> get json async => {
         if (countryCode != null) 'cc': countryCode,
-        'identifier': username,
+        if (useLatestVersion) 'identifier': username else 'username': username,
         'new_password': password,
         'otp': otp,
       };
@@ -115,6 +144,16 @@ class ForgotPasswordRequest extends Request {
   final String? countryCode;
   final String username;
   final Json? mockResponse;
+  final bool useLatestVersion;
+
+  factory ForgotPasswordRequest.old(String countryCode, String phoneNumber, {Json? mockResponse}) {
+    return ForgotPasswordRequest._(
+      int.parse(phoneNumber).toString(),
+      countryCode: countryCode,
+      mockResponse: mockResponse,
+      useLatestVersion: false,
+    );
+  }
 
   factory ForgotPasswordRequest.phone(String countryCode, String phoneNumber,
       {Json? mockResponse}) {
@@ -126,13 +165,14 @@ class ForgotPasswordRequest extends Request {
     return ForgotPasswordRequest._(email, countryCode: countryCode, mockResponse: mockResponse);
   }
 
-  ForgotPasswordRequest._(this.username, {this.countryCode, this.mockResponse})
+  ForgotPasswordRequest._(this.username,
+      {this.countryCode, this.mockResponse, this.useLatestVersion = true})
       : super(1004, isPublic: false);
 
   @override
   Future<Json> get json async => {
         if (countryCode != null) 'cc': countryCode,
-        'identifier': username,
+        if (useLatestVersion) 'identifier': username else 'username': username,
       };
 
   @override

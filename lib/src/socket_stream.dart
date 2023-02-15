@@ -1,7 +1,6 @@
 import 'dart:async';
 
 import 'package:apex_api/src/notifier/message_notifier.dart';
-import 'package:flutter/foundation.dart';
 
 class StreamSocket<T> extends MessageNotifier {
   final _socketResponse = StreamController<T?>.broadcast(sync: true);

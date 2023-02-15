@@ -14,8 +14,7 @@ abstract class Request extends Equatable {
   final bool? encrypt;
   final bool isEmpty;
 
-  Request(
-    this.action, {
+  Request(this.action, {
     this.isEmpty = false,
     this.encrypt,
     this.groupName,
@@ -24,6 +23,8 @@ abstract class Request extends Equatable {
   });
 
   String? get handlerUrl => null;
+
+  bool get isPrivate => !isPublic;
 
   Future<String> get zip async => '{$action => $groupName => $isPublic => ${await toJson()}}';
 
@@ -99,53 +100,56 @@ abstract class Request extends Equatable {
     return finalResult;
   }
 
-  Future<BaseResponse<DM>> send<DM extends DataModel>(
+  Future<BaseResponse<T>> send<T extends DataModel>(
     BuildContext context, {
-    bool? showProgress,
-    bool? showRetry,
+    T Function(Json json)? response,
+    String? languageCode,
+    bool showProgress = false,
+    bool showRetry = false,
     VoidCallback? onStart,
-    OnSuccess<DM>? onSuccess,
+    ValueChanged<BaseResponse<T>>? onSuccess,
     OnConnectionError? onError,
     bool ignoreExpireTime = false,
   }) {
-    return context.api.request<DM>(this,
+    return context.http.post<T>(this,
         showProgress: showProgress,
+        response: response,
+        languageCode: languageCode,
         showRetry: showRetry,
         onStart: onStart,
         onSuccess: onSuccess,
-        onError: onError,
         ignoreExpireTime: ignoreExpireTime);
   }
 
-  Future<BaseResponse> startUpload<DM extends DataModel>(
-    BuildContext context, {
-    bool? showProgress,
-    // bool? showRetry,
-    VoidCallback? onStart,
-    OnSuccess<DM>? onSuccess,
-    OnConnectionError? onError,
-    bool ignoreExpireTime = false,
-    ValueChanged<VoidCallback>? cancelToken,
-    String? fileName,
-    String fileKey = 'file',
-    String? filePath,
-    Uint8List? blobData,
-    ValueChanged<double>? onProgress,
-  }) {
-    return context.api.uploadFile<DM>(
-      this,
-      // showRetry: showRetry,
-      showProgress: showProgress,
-      cancelToken: cancelToken,
-      fileKey: fileKey,
-      onProgress: onProgress,
-      blobData: blobData,
-      fileName: fileName,
-      filePath: filePath,
-      onSuccess: onSuccess,
-      onError: onError,
-    );
-  }
+  // Future<BaseResponse> startUpload<DM extends DataModel>(
+  //   BuildContext context, {
+  //   bool? showProgress,
+  //   // bool? showRetry,
+  //   VoidCallback? onStart,
+  //   OnSuccess<DM>? onSuccess,
+  //   OnConnectionError? onError,
+  //   bool ignoreExpireTime = false,
+  //   ValueChanged<VoidCallback>? cancelToken,
+  //   String? fileName,
+  //   String fileKey = 'file',
+  //   String? filePath,
+  //   Uint8List? blobData,
+  //   ValueChanged<double>? onProgress,
+  // }) {
+  //   return context.api.uploadFile<DM>(
+  //     this,
+  //     // showRetry: showRetry,
+  //     showProgress: showProgress,
+  //     cancelToken: cancelToken,
+  //     fileKey: fileKey,
+  //     onProgress: onProgress,
+  //     blobData: blobData,
+  //     fileName: fileName,
+  //     filePath: filePath,
+  //     onSuccess: onSuccess,
+  //     onError: onError,
+  //   );
+  // }
 
   @override
   List<Object?> get props => [action, json];

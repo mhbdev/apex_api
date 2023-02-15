@@ -1,7 +1,7 @@
+import 'package:apex_api/apex_api.dart';
 import 'package:flutter/material.dart';
-
-import '../server_widget.dart';
+import 'package:provider/provider.dart';
 
 extension ServerWidgetExtension on BuildContext {
-  ServerWrapperState get api => ServerWidget.of(this, build: false);
+  HttpAlt get http => Provider.of<HttpAlt>(this, listen: false);
 }

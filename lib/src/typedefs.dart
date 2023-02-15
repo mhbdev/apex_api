@@ -22,13 +22,9 @@ typedef StringCallback = Future<String> Function();
 
 typedef EventHandler<T> = void Function(T data);
 
-typedef LoginStepManager = void Function(LoginStep step);
-
-typedef OnTimeout<T> = FutureOr<T> Function();
-
 typedef OnConnectionError = void Function(ServerException exception, Object error);
 
-typedef OnSuccess<DM extends DataModel> = void Function(BaseResponse<DM> response);
+typedef OnSuccess = void Function(BaseResponse response);
 
 typedef RetryBuilder = Widget Function(
     BuildContext context, void Function<DM extends DataModel>() onRetry, VoidCallback close);

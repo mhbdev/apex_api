@@ -2,14 +2,15 @@ import '../../apex_api.dart';
 
 enum LoginStep { showUsername, showOtp, showPassword, showUpgrade, failure, success }
 
-class BaseResponse<DM> {
+class BaseResponse<DM extends DataModel> {
   final int success;
   final String? message;
-  Json? data;
   final ServerException? error;
   final String? errorMessage;
   final int expiresAt;
   final DM? model;
+
+  Json? data;
 
   bool get isSuccessful => hasData && success == 1;
 
@@ -68,14 +69,23 @@ class BaseResponse<DM> {
     }
     return data![key];
   }
+
+  @override
+  String toString() {
+    return {
+      'hasData': hasData,
+      'hasError': hasError,
+      if (data != null) 'data': data,
+      if (error != null) 'error': error,
+      if (errorMessage != null) 'errorMessage': errorMessage,
+    }.toString();
+  }
 }
 
 class DataModel {
   DataModel();
 
-  factory DataModel.fromJson(Json json) {
-    return DataModel();
-  }
+  factory DataModel.fromJson(Json json) => DataModel();
 }
 
 // class Response extends BaseResponse {

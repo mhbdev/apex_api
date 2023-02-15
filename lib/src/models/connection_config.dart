@@ -1,5 +1,11 @@
-import 'package:apex_api/apex_api.dart';
+import 'dart:async';
+
+import 'package:equatable/equatable.dart';
 import 'package:flutter/foundation.dart';
+import 'package:logger/logger.dart';
+import 'package:socket_io_client/socket_io_client.dart';
+
+import '../../cipher/models/key_pair.dart';
 
 class ApiConfig extends Equatable {
   const ApiConfig(
@@ -7,16 +13,17 @@ class ApiConfig extends Equatable {
     this.handlerNamespace = '/',
     this.namespace = 'data',
     this.eventName = 'message',
+    this.languageCode = 'EN',
     this.iosKey,
     this.webKey,
     this.androidKey,
     this.windowsKey,
     this.privateVersion = 1,
     this.publicVersion = 1,
-    this.appVersion = '1',
+    this.dbVersion = '1',
     this.options,
     this.port,
-    this.debugMode = false,
+    this.logLevel = Level.debug,
     this.uploadTimeout = const Duration(minutes: 5),
     this.requestTimeout = const Duration(seconds: 30),
     this.connectionTimeout = const Duration(seconds: 10),
@@ -40,21 +47,24 @@ class ApiConfig extends Equatable {
   final int privateVersion;
   final int publicVersion;
 
+  final String languageCode;
   final String eventName;
 
   final bool useSocket;
   final bool useMocks;
 
-  final bool debugMode;
+  final Level logLevel;
   final Duration uploadTimeout;
   final Duration requestTimeout;
   final Duration connectionTimeout;
 
-  final OnTimeout? onTimeout;
+  final FutureOr<T> Function<T>()? onTimeout;
 
-  final String appVersion;
+  final String dbVersion;
 
   final String handlerNamespace;
+
+  bool get debugMode => logLevel != Level.nothing;
 
   String? get secretKey => encrypt
       ? (kIsWeb || debugMode
@@ -66,8 +76,7 @@ class ApiConfig extends Equatable {
                   : iosKey!.secretKey)))
       : null;
 
-  String? get publicKey =>
-      encrypt
+  String? get publicKey => encrypt
       ? (kIsWeb || debugMode
           ? webKey!.publicKey
           : (defaultTargetPlatform == TargetPlatform.android
@@ -85,10 +94,21 @@ class ApiConfig extends Equatable {
               ? windowsKey != null
               : iosKey != null));
 
+  String get os => kIsWeb || debugMode
+      ? 'W'
+      : defaultTargetPlatform == TargetPlatform.android
+          ? 'A'
+          : defaultTargetPlatform == TargetPlatform.iOS
+              ? 'I'
+              : defaultTargetPlatform == TargetPlatform.windows
+                  ? 'D'
+                  : 'U';
+
   ApiConfig copyWith(
       {String? host,
       String? namespace,
       String? eventName,
+      String? languageCode,
       KeyPair? iosKey,
       KeyPair? webKey,
       KeyPair? windowsKey,
@@ -98,24 +118,25 @@ class ApiConfig extends Equatable {
       String? uploadHandlerUrl,
       OptionBuilder? options,
       int? port,
-      bool? debugMode,
+      Level? logLevel,
       Duration? uploadTimeout,
       Duration? requestTimeout,
       bool? useSocket,
       bool? useMocks,
       Duration? connectionTimeout,
-      String? appVersion,
-      OnTimeout? onTimeout,
+      String? dbVersion,
+      FutureOr<T> Function<T>()? onTimeout,
       String? handlerNamespace}) {
     return ApiConfig(
       host ?? this.host,
       useMocks: useMocks ?? this.useMocks,
       useSocket: useSocket ?? this.useSocket,
-      debugMode: debugMode ?? this.debugMode,
+      logLevel: logLevel ?? this.logLevel,
       webKey: webKey ?? this.webKey,
       androidKey: androidKey ?? this.androidKey,
       iosKey: iosKey ?? this.iosKey,
       windowsKey: windowsKey ?? this.windowsKey,
+      languageCode: languageCode ?? this.languageCode,
       eventName: eventName ?? this.eventName,
       namespace: namespace ?? this.namespace,
       options: options ?? this.options,
@@ -124,7 +145,7 @@ class ApiConfig extends Equatable {
       publicVersion: publicVersion ?? this.publicVersion,
       requestTimeout: requestTimeout ?? this.requestTimeout,
       uploadTimeout: uploadTimeout ?? this.uploadTimeout,
-      appVersion: appVersion ?? this.appVersion,
+      dbVersion: dbVersion ?? this.dbVersion,
       connectionTimeout: connectionTimeout ?? this.connectionTimeout,
       onTimeout: onTimeout ?? this.onTimeout,
       handlerNamespace: handlerNamespace ?? this.handlerNamespace,

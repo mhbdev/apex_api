@@ -57,6 +57,7 @@ class ReactiveWidget<DM extends DataModel> extends StatefulWidget {
   final Widget Function(
       ReactiveState state, Widget child, Future<BaseResponse<DM>> Function() onRetry,
       {BaseResponse<DM>? response})? wrapper;
+  final DM Function(Json json)? response;
 
   const ReactiveWidget({
     Key? key,
@@ -65,6 +66,7 @@ class ReactiveWidget<DM extends DataModel> extends StatefulWidget {
     required this.failureWidget,
     required this.successWidget,
     required this.retryWidget,
+    this.response,
     this.listener,
     this.ignoreExpireTime = false,
     this.controller,
@@ -144,6 +146,7 @@ class _ReactiveWidgetState<DM extends DataModel> extends State<ReactiveWidget<DM
     WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
       widget.request.send<DM>(
         context,
+        response: widget.response,
         onStart: () {
           if (widget.listener != null) {
             widget.listener!(ReactiveState.loading, _sendRequest);
@@ -167,20 +170,20 @@ class _ReactiveWidgetState<DM extends DataModel> extends State<ReactiveWidget<DM
         showRetry: false,
         showProgress: false,
         ignoreExpireTime: widget.ignoreExpireTime,
-        onError: (exception, error) {
-          completer.completeError(error);
-          final reactiveError = ReactiveError(
-            exception,
-            error,
-          );
-          if (widget.listener != null) {
-            widget.listener!(ReactiveState.error, _sendRequest, error: reactiveError);
-          }
-          _controller.addError(
-            reactiveError,
-          );
-        },
-      );
+      ).catchError((e, stackTrace) {
+        completer.completeError(e);
+        final reactiveError = ReactiveError(
+          ServerErrorException(e),
+          e,
+        );
+        if (widget.listener != null) {
+          widget.listener!(ReactiveState.error, _sendRequest, error: reactiveError);
+        }
+        _controller.addError(
+          reactiveError,
+        );
+        return completer.future;
+      });
     });
     return completer.future;
   }

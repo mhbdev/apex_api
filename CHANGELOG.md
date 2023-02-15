@@ -1,3 +1,15 @@
+## 2.0.1
+
+* Progress Dialog issue is solved
+
+## 2.0.0
+
+* Breaking Changes
+
+- ServerWrapper turned into ApiWrapper
+- Api class has been removed
+- context.api.request => context.http.post
+
 ## 1.1.6
 
 * HandlerNamespace is used to route users to different handlers of one api (implemented in ApiConfig

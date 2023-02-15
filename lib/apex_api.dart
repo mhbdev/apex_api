@@ -13,12 +13,15 @@ import 'src/typedefs.dart';
 export 'package:equatable/equatable.dart';
 export 'package:socket_io_client/socket_io_client.dart';
 
-export 'src/cipher/aes.dart';
-export 'src/cipher/crypto.dart';
-export 'src/cipher/models/key_pair.dart';
-export 'src/cipher/rsa.dart';
+export 'src/api_wrapper.dart';
 export 'src/clients/clients.dart';
 export 'src/clients/connector.dart';
+
+// export 'src/cipher/aes.dart';
+// export 'src/cipher/crypto.dart';
+// export 'src/cipher/models/key_pair.dart';
+// export 'src/cipher/rsa.dart';
+export 'src/clients/http/http_alt.dart';
 export 'src/exceptions/exceptions.dart';
 export 'src/extensions/context_extensions.dart';
 export 'src/extensions/map_extensions.dart';
