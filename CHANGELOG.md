@@ -5,7 +5,6 @@
 ## 2.0.0
 
 * Breaking Changes
-
 - ServerWrapper turned into ApiWrapper
 - Api class has been removed
 - context.api.request => context.http.post

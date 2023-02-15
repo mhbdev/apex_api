@@ -16,7 +16,6 @@ export 'package:socket_io_client/socket_io_client.dart';
 export 'src/api_wrapper.dart';
 export 'src/clients/clients.dart';
 export 'src/clients/connector.dart';
-
 // export 'src/cipher/aes.dart';
 // export 'src/cipher/crypto.dart';
 // export 'src/cipher/models/key_pair.dart';
