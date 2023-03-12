@@ -28,10 +28,8 @@ class ApiConfig extends Equatable {
     this.requestTimeout = const Duration(seconds: 30),
     this.connectionTimeout = const Duration(seconds: 10),
     this.useMocks = false,
-    this.useSocket = true,
     this.onTimeout,
-  }) : assert(!useSocket || port == null,
-            'If you are using socket system, you have to pass an integer number as port');
+  });
 
   final KeyPair? iosKey;
   final KeyPair? webKey;
@@ -50,7 +48,6 @@ class ApiConfig extends Equatable {
   final String languageCode;
   final String eventName;
 
-  final bool useSocket;
   final bool useMocks;
 
   final Level logLevel;
@@ -121,7 +118,6 @@ class ApiConfig extends Equatable {
       Level? logLevel,
       Duration? uploadTimeout,
       Duration? requestTimeout,
-      bool? useSocket,
       bool? useMocks,
       Duration? connectionTimeout,
       String? dbVersion,
@@ -130,7 +126,6 @@ class ApiConfig extends Equatable {
     return ApiConfig(
       host ?? this.host,
       useMocks: useMocks ?? this.useMocks,
-      useSocket: useSocket ?? this.useSocket,
       logLevel: logLevel ?? this.logLevel,
       webKey: webKey ?? this.webKey,
       androidKey: androidKey ?? this.androidKey,
@@ -160,6 +155,5 @@ class ApiConfig extends Equatable {
         eventName,
         privateVersion,
         publicVersion,
-        useSocket,
       ];
 }

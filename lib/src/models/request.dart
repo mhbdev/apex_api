@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:apex_api/apex_api.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
@@ -13,8 +15,11 @@ abstract class Request extends Equatable {
   final int action;
   final bool? encrypt;
   final bool isEmpty;
+  final String? storageUniqueKey;
 
-  Request(this.action, {
+  Request(
+    this.action, {
+    this.storageUniqueKey,
     this.isEmpty = false,
     this.encrypt,
     this.groupName,
@@ -81,11 +86,9 @@ abstract class Request extends Equatable {
     Json finalResult;
     finalResult = !isEmpty
         ? ({
-            'action': action,
-            if (groupName != null && isPublic) 'group_name': groupName,
-          }
-          ..addAll(await json)
-          ..addAll(_finalJson))
+      'action': action,
+      if (groupName != null && isPublic) 'group_name': groupName,
+    }..addAll(await json)..addAll(_finalJson))
         : {};
 
     if (!isEmpty && ![1001, 1002, 1003, 1004].contains(action)) {
@@ -100,25 +103,43 @@ abstract class Request extends Equatable {
     return finalResult;
   }
 
-  Future<BaseResponse<T>> send<T extends DataModel>(
-    BuildContext context, {
+  Future<BaseResponse<T>> send<T extends DataModel>(BuildContext context, {
     T Function(Json json)? response,
     String? languageCode,
     bool showProgress = false,
     bool showRetry = false,
     VoidCallback? onStart,
+    VoidCallback? onComplete,
     ValueChanged<BaseResponse<T>>? onSuccess,
     OnConnectionError? onError,
     bool ignoreExpireTime = false,
   }) {
-    return context.http.post<T>(this,
-        showProgress: showProgress,
-        response: response,
-        languageCode: languageCode,
-        showRetry: showRetry,
-        onStart: onStart,
-        onSuccess: onSuccess,
-        ignoreExpireTime: ignoreExpireTime);
+    try {
+      return context.http
+          .post<T>(this,
+              showProgress: showProgress,
+              response: response,
+              languageCode: languageCode,
+              showRetry: showRetry,
+              onStart: onStart,
+              onSuccess: onSuccess,
+              ignoreExpireTime: ignoreExpireTime)
+          .catchError((e) {
+        if (onError != null) {
+          onError(ServerErrorException('Maybe timeout!'), e);
+        }
+        return Future.value(BaseResponse<T>(error: ServerErrorException()));
+      }).whenComplete(() {
+        if (onComplete != null) {
+          onComplete();
+        }
+      });
+    } catch (e) {
+      if (onError != null) {
+        onError(ServerErrorException('Maybe timeout!'), e);
+      }
+      rethrow;
+    }
   }
 
   // Future<BaseResponse> startUpload<DM extends DataModel>(
@@ -160,27 +181,28 @@ class SimpleRequest extends Request {
   final Json? responseMockData;
 
   factory SimpleRequest.empty({bool? encrypt, Json? responseMockData}) => SimpleRequest(
-        0,
-        isEmpty: true,
-        encrypt: encrypt,
-        responseMockData: responseMockData,
-      );
+    0,
+    isEmpty: true,
+    encrypt: encrypt,
+    responseMockData: responseMockData,
+  );
 
-  SimpleRequest(
-    int action, {
+  SimpleRequest(int action, {
     this.data,
     this.responseMockData,
     bool isPublic = false,
     bool isEmpty = false,
     String? groupName,
+    String? storageUniqueKey,
     bool needCredentials = false,
     bool? encrypt,
   }) : super(
-          action,
+    action,
           groupName: groupName,
           isEmpty: isEmpty,
           needCredentials: needCredentials,
           isPublic: isPublic,
+          storageUniqueKey: storageUniqueKey,
           encrypt: encrypt,
         );
 

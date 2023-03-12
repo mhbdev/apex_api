@@ -34,7 +34,7 @@ class LoginBuilder extends StatefulWidget {
   State<LoginBuilder> createState() => _LoginBuilderState();
 }
 
-class _LoginBuilderState extends State<LoginBuilder> with WidgetLoadMixin, MountedStateMixin {
+class _LoginBuilderState extends State<LoginBuilder> with MountedStateMixin {
   LoginStep _step = LoginStep.showUsername;
   bool _isLoading = false;
 
@@ -44,7 +44,7 @@ class _LoginBuilderState extends State<LoginBuilder> with WidgetLoadMixin, Mount
       return (widget.loginType == LoginType.phone && countryCode != null
               ? DetectUserRequest.phone(countryCode, username)
               : DetectUserRequest.email(username, countryCode: countryCode))
-          .send(
+          .send<DataModel>(
         context,
         onStart: () {
           _isLoading = true;
@@ -56,7 +56,7 @@ class _LoginBuilderState extends State<LoginBuilder> with WidgetLoadMixin, Mount
           mountedSetState();
           _notifyListener();
         },
-        onError: (exception, error) {
+        onComplete: () {
           _isLoading = false;
           mountedSetState();
         },
@@ -67,7 +67,7 @@ class _LoginBuilderState extends State<LoginBuilder> with WidgetLoadMixin, Mount
       return (widget.loginType == LoginType.phone && countryCode != null
               ? LoginRequest.phone(countryCode, username, password)
               : LoginRequest.email(username, password, countryCode: countryCode))
-          .send(
+          .send<DataModel>(
         context,
         onStart: () {
           _isLoading = true;
@@ -79,7 +79,7 @@ class _LoginBuilderState extends State<LoginBuilder> with WidgetLoadMixin, Mount
           mountedSetState();
           _notifyListener();
         },
-        onError: (exception, error) {
+        onComplete: () {
           _isLoading = false;
           mountedSetState();
         },
@@ -90,7 +90,7 @@ class _LoginBuilderState extends State<LoginBuilder> with WidgetLoadMixin, Mount
       return (widget.loginType == LoginType.phone && countryCode != null
               ? ForgotPasswordRequest.phone(countryCode, username)
               : ForgotPasswordRequest.email(username, countryCode: countryCode))
-          .send(
+          .send<DataModel>(
         context,
         onStart: () {
           _isLoading = true;
@@ -102,7 +102,7 @@ class _LoginBuilderState extends State<LoginBuilder> with WidgetLoadMixin, Mount
           mountedSetState();
           _notifyListener();
         },
-        onError: (exception, error) {
+        onComplete: () {
           _isLoading = false;
           mountedSetState();
         },
@@ -113,7 +113,7 @@ class _LoginBuilderState extends State<LoginBuilder> with WidgetLoadMixin, Mount
       return (widget.loginType == LoginType.phone && countryCode != null
               ? VerifyUserRequest.phone(countryCode, username, password, otp)
               : VerifyUserRequest.email(username, password, otp, countryCode: countryCode))
-          .send(
+          .send<DataModel>(
         context,
         onStart: () {
           _isLoading = true;
@@ -125,7 +125,7 @@ class _LoginBuilderState extends State<LoginBuilder> with WidgetLoadMixin, Mount
           mountedSetState();
           _notifyListener();
         },
-        onError: (exception, error) {
+        onComplete: () {
           _isLoading = false;
           mountedSetState();
         },
@@ -138,9 +138,6 @@ class _LoginBuilderState extends State<LoginBuilder> with WidgetLoadMixin, Mount
       });
     });
   }
-
-  @override
-  void onLoad(BuildContext context) {}
 
   LoginStep _escapeLoginStep(LoginStep step) {
     if (step != LoginStep.success && step != LoginStep.failure && step != LoginStep.showUpgrade) {

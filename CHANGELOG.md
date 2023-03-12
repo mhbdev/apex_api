@@ -1,10 +1,16 @@
-## 2.0.1
+## 2.0.5
+
+* Added storageUniqueKey property to involve another parameter in save_local option
+
+## 2.0.3
 
 * Progress Dialog issue is solved
+* Solved send method onError and onComplete problems
 
 ## 2.0.0
 
 * Breaking Changes
+
 - ServerWrapper turned into ApiWrapper
 - Api class has been removed
 - context.api.request => context.http.post

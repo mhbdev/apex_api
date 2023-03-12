@@ -43,21 +43,24 @@ class ReactiveController<DM extends DataModel> {
 class ReactiveWidget<DM extends DataModel> extends StatefulWidget {
   final Request request;
   final Widget loadingWidget;
-  final Widget Function(BaseResponse<DM> response, Future<BaseResponse<DM>> Function() onRetry)
-      failureWidget;
-  final Widget Function(BaseResponse<DM> response, Future<BaseResponse<DM>> Function() onRetry)
-      successWidget;
   final Widget Function(
-          ServerException exception, Object error, Future<BaseResponse<DM>> Function() onRetry)
-      retryWidget;
+          BaseResponse<DM> response, Future<BaseResponse<DM>> Function([bool? silent]) onRetry)
+      failureWidget;
+  final Widget Function(
+          BaseResponse<DM> response, Future<BaseResponse<DM>> Function([bool? silent]) onRetry)
+      successWidget;
+  final Widget Function(ServerException exception, Object error,
+      Future<BaseResponse<DM>> Function([bool? silent]) onRetry) retryWidget;
   final bool ignoreExpireTime;
   final ReactiveController<DM>? controller;
-  final void Function(ReactiveState state, Future<BaseResponse<DM>> Function() onRetry,
+  final void Function(
+      ReactiveState state, Future<BaseResponse<DM>> Function([bool? silent]) onRetry,
       {BaseResponse<DM>? response, ReactiveError? error})? listener;
   final Widget Function(
-      ReactiveState state, Widget child, Future<BaseResponse<DM>> Function() onRetry,
+      ReactiveState state, Widget child, Future<BaseResponse<DM>> Function([bool? silent]) onRetry,
       {BaseResponse<DM>? response})? wrapper;
   final DM Function(Json json)? response;
+  final bool storeResponses;
 
   const ReactiveWidget({
     Key? key,
@@ -71,6 +74,7 @@ class ReactiveWidget<DM extends DataModel> extends StatefulWidget {
     this.ignoreExpireTime = false,
     this.controller,
     this.wrapper,
+    this.storeResponses = false,
   }) : super(key: key);
 
   @override
@@ -78,23 +82,24 @@ class ReactiveWidget<DM extends DataModel> extends StatefulWidget {
 }
 
 class _ReactiveWidgetState<DM extends DataModel> extends State<ReactiveWidget<DM>>
-    with AutomaticKeepAliveClientMixin {
+    with AutomaticKeepAliveClientMixin, WidgetLoadMixin {
   final StreamController<ReactiveResponse<DM>> _controller =
       StreamController<ReactiveResponse<DM>>();
 
+  Map<Request, BaseResponse<DM>> _storedRequests = {};
+
   @override
   void initState() {
-    if (widget.controller != null) {
-      widget.controller!.setListener(_sendRequest);
-    }
     _sendRequest();
     super.initState();
   }
 
   @override
   void dispose() {
+    _storedRequests.clear();
     if (widget.controller != null) {
       widget.controller!.removeListener();
+      if (!_controller.isClosed) _controller.close();
     }
     super.dispose();
   }
@@ -141,48 +146,59 @@ class _ReactiveWidgetState<DM extends DataModel> extends State<ReactiveWidget<DM
     );
   }
 
-  Future<BaseResponse<DM>> _sendRequest() {
+  Future<BaseResponse<DM>> _sendRequest([bool? silent]) {
     Completer<BaseResponse<DM>> completer = Completer<BaseResponse<DM>>();
     WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
-      widget.request.send<DM>(
-        context,
+      context.http.post<DM>(
+        widget.request,
         response: widget.response,
         onStart: () {
           if (widget.listener != null) {
             widget.listener!(ReactiveState.loading, _sendRequest);
           }
-          _controller.add(ReactiveResponse(ReactiveState.loading));
-        },
-        onSuccess: (response) {
-          completer.complete(response);
-          if (response.isSuccessful) {
-            if (widget.listener != null) {
-              widget.listener!(ReactiveState.success, _sendRequest, response: response);
-            }
-            _controller.add(ReactiveResponse(ReactiveState.success, response: response));
-          } else {
-            if (widget.listener != null) {
-              widget.listener!(ReactiveState.failure, _sendRequest, response: response);
-            }
-            _controller.add(ReactiveResponse(ReactiveState.failure, response: response));
-          }
+          if (silent != true) _controller.add(ReactiveResponse(ReactiveState.loading));
         },
         showRetry: false,
         showProgress: false,
         ignoreExpireTime: widget.ignoreExpireTime,
-      ).catchError((e, stackTrace) {
-        completer.completeError(e);
-        final reactiveError = ReactiveError(
-          ServerErrorException(e),
-          e,
-        );
-        if (widget.listener != null) {
-          widget.listener!(ReactiveState.error, _sendRequest, error: reactiveError);
+      ).then((response) {
+        if (widget.storeResponses) {
+          if (_storedRequests[widget.request] != null) {
+            response = _storedRequests[widget.request]!;
+          }
+          _storedRequests[widget.request] = response;
         }
-        _controller.addError(
-          reactiveError,
-        );
-        return completer.future;
+
+        if (response.hasError) {
+          completer.completeError(response.error!);
+          final reactiveError = ReactiveError(
+            response.error!,
+            response.errorMessage ?? response.error.toString(),
+          );
+          if (widget.listener != null) {
+            widget.listener!(ReactiveState.error, _sendRequest, error: reactiveError);
+          }
+          if (silent != true) _controller.addError(reactiveError);
+          return;
+        }
+
+        completer.complete(response);
+
+        if (response.isSuccessful) {
+          if (widget.listener != null) {
+            widget.listener!(ReactiveState.success, _sendRequest, response: response);
+          }
+          if (silent != true) {
+            _controller.add(ReactiveResponse(ReactiveState.success, response: response));
+          }
+        } else {
+          if (widget.listener != null) {
+            widget.listener!(ReactiveState.failure, _sendRequest, response: response);
+          }
+          if (silent != true) {
+            _controller.add(ReactiveResponse(ReactiveState.failure, response: response));
+          }
+        }
       });
     });
     return completer.future;
@@ -190,4 +206,11 @@ class _ReactiveWidgetState<DM extends DataModel> extends State<ReactiveWidget<DM
 
   @override
   bool get wantKeepAlive => true;
+
+  @override
+  void onLoad(BuildContext context) {
+    if (widget.controller != null) {
+      widget.controller!.setListener(_sendRequest);
+    }
+  }
 }

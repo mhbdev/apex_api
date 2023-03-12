@@ -12,7 +12,7 @@ class BaseResponse<DM extends DataModel> {
 
   Json? data;
 
-  bool get isSuccessful => hasData && success == 1;
+  bool get isSuccessful => hasData && success >= 0;
 
   bool get isFailure => hasError || success == -1;
 

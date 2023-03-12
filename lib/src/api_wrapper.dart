@@ -11,18 +11,20 @@ class ApiWrapper extends StatelessWidget {
   final Map<Type, ResType>? responseModels;
   final Widget? progressWidget;
   final Widget Function(BuildContext context, VoidCallback onRetry)? retryBuilder;
+  final bool useSocket;
 
-  const ApiWrapper(
-      {Key? key,
-      required this.config,
-      required this.child,
-      required this.navKey,
-      this.messageHandler,
-      this.loginStepHandler,
-      this.responseModels,
-      this.progressWidget,
-      this.retryBuilder})
-      : super(key: key);
+  const ApiWrapper({
+    Key? key,
+    required this.config,
+    required this.child,
+    required this.navKey,
+    this.messageHandler,
+    this.loginStepHandler,
+    this.responseModels,
+    this.progressWidget,
+    this.retryBuilder,
+    this.useSocket = false,
+  }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -31,6 +33,7 @@ class ApiWrapper extends StatelessWidget {
         ChangeNotifierProvider(
           create: (context) => HttpAlt(
             config,
+            useSocket: useSocket,
             navKey: navKey,
             progressWidget: progressWidget,
             messageHandler: messageHandler,

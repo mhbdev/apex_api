@@ -359,37 +359,3 @@
 //       _couldNotParseException(completer, showRetry);
 //     }
 //   }
-//
-//   void _couldNotParseException<DM extends DataModel>(
-//       Completer<BaseResponse<DM>> completer, bool? showRetry) {
-//     if (showRetry == true) {
-//       showRetryDialog(ServerErrorException('Could not parse server response! wanna retry?'));
-//     }
-//     completer.completeError(ServerErrorException('Could not parse server response!'));
-//   }
-//
-//   void _notifyStatus() {
-//     // print('notify (${socket.id}) => $status');
-//     notifyListeners('status', status);
-//   }
-//
-//   @override
-//   Future<BaseResponse<DM>> uploadFile<DM extends DataModel>(
-//     Request request, {
-//     String? fileName,
-//     String fileKey = 'file',
-//     String? filePath,
-//     Uint8List? blobData,
-//     bool? showProgress,
-//     bool? showRetry,
-//     ValueChanged<double>? onProgress,
-//     ValueChanged<VoidCallback>? cancelToken,
-//     OnSuccess<DM>? onSuccess,
-//     OnConnectionError? onError,
-//     VoidCallback? onStart,
-//   }) {
-//     throw UnimplementedError();
-//   }
-// }
-//
-// enum ConnectionStatus { reconnecting, connecting, connected, error, destroyed, timeout }
