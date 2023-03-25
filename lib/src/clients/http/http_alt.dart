@@ -259,7 +259,7 @@ class HttpAlt extends ChangeNotifier {
     request.addParams({
       if ([1001, 1002, 1003, 1004].contains(request.action)) ...{
         'additional': {if (imei != null) 'imei': imei, if (imsi != null) 'imsi': imsi},
-        'namespace': config.handlerNamespace,
+        if (config.handlerNamespace != null) 'namespace': config.handlerNamespace,
       },
       'fingerprint': fingerprint,
       'language': (languageCode ?? config.languageCode).toUpperCase(),
@@ -469,7 +469,7 @@ class HttpAlt extends ChangeNotifier {
     request.addParams({
       if ([1001, 1002, 1003, 1004].contains(request.action)) ...{
         'additional': {if (imei != null) 'imei': imei, if (imsi != null) 'imsi': imsi},
-        'namespace': config.handlerNamespace,
+        if (config.handlerNamespace != null) 'namespace': config.handlerNamespace,
       },
       'fingerprint': fingerprint,
       'language': (languageCode ?? config.languageCode).toUpperCase(),

@@ -1,3 +1,11 @@
+## 2.0.6
+
+* LoginBuilder's State can be maintained using a ValueNotifier being passed as `controller`
+* ReactiveWidget State can be also maintained using a stream controller being passed to the
+  constructor. `streamController` but make sure to close the stream in your dispose method like
+  this:
+  ```if (!_controller.isClosed) _controller.close();```
+
 ## 2.0.5
 
 * Added storageUniqueKey property to involve another parameter in save_local option

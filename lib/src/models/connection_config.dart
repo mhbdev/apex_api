@@ -10,7 +10,7 @@ import '../../cipher/models/key_pair.dart';
 class ApiConfig extends Equatable {
   const ApiConfig(
     this.host, {
-    this.handlerNamespace = '/',
+    this.handlerNamespace,
     this.namespace = 'data',
     this.eventName = 'message',
     this.languageCode = 'EN',
@@ -59,7 +59,7 @@ class ApiConfig extends Equatable {
 
   final String dbVersion;
 
-  final String handlerNamespace;
+  final String? handlerNamespace;
 
   bool get debugMode => logLevel != Level.nothing;
 

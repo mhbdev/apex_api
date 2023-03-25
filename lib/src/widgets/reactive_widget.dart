@@ -61,6 +61,7 @@ class ReactiveWidget<DM extends DataModel> extends StatefulWidget {
       {BaseResponse<DM>? response})? wrapper;
   final DM Function(Json json)? response;
   final bool storeResponses;
+  final StreamController<ReactiveResponse<DM>>? streamController;
 
   const ReactiveWidget({
     Key? key,
@@ -75,6 +76,7 @@ class ReactiveWidget<DM extends DataModel> extends StatefulWidget {
     this.controller,
     this.wrapper,
     this.storeResponses = false,
+    this.streamController,
   }) : super(key: key);
 
   @override
@@ -83,13 +85,13 @@ class ReactiveWidget<DM extends DataModel> extends StatefulWidget {
 
 class _ReactiveWidgetState<DM extends DataModel> extends State<ReactiveWidget<DM>>
     with AutomaticKeepAliveClientMixin, WidgetLoadMixin {
-  final StreamController<ReactiveResponse<DM>> _controller =
-      StreamController<ReactiveResponse<DM>>();
+  late final StreamController<ReactiveResponse<DM>> _controller;
 
   Map<Request, BaseResponse<DM>> _storedRequests = {};
 
   @override
   void initState() {
+    _controller = widget.streamController ?? StreamController<ReactiveResponse<DM>>();
     _sendRequest();
     super.initState();
   }
@@ -99,7 +101,9 @@ class _ReactiveWidgetState<DM extends DataModel> extends State<ReactiveWidget<DM
     _storedRequests.clear();
     if (widget.controller != null) {
       widget.controller!.removeListener();
-      if (!_controller.isClosed) _controller.close();
+      if (widget.streamController == null) {
+        if (!_controller.isClosed) _controller.close();
+      }
     }
     super.dispose();
   }

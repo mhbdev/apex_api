@@ -20,6 +20,7 @@ class LoginBuilder extends StatefulWidget {
   final bool showProgress;
   final bool showRetry;
   final LoginType loginType;
+  final ValueNotifier<LoginStep>? controller;
 
   const LoginBuilder({
     Key? key,
@@ -28,6 +29,7 @@ class LoginBuilder extends StatefulWidget {
     this.showRetry = false,
     this.listener,
     this.loginType = LoginType.phone,
+    this.controller,
   }) : super(key: key);
 
   @override
@@ -35,12 +37,26 @@ class LoginBuilder extends StatefulWidget {
 }
 
 class _LoginBuilderState extends State<LoginBuilder> with MountedStateMixin {
-  LoginStep _step = LoginStep.showUsername;
+  late final ValueNotifier<LoginStep> _step;
   bool _isLoading = false;
 
   @override
+  void initState() {
+    _step = widget.controller ?? ValueNotifier(LoginStep.showUsername);
+    super.initState();
+  }
+
+  @override
+  void dispose() {
+    if (widget.controller == null) {
+      _step.dispose();
+    }
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return widget.builder(context, _step, _isLoading, (username, {countryCode}) async {
+    return widget.builder(context, _step.value, _isLoading, (username, {countryCode}) async {
       return (widget.loginType == LoginType.phone && countryCode != null
               ? DetectUserRequest.phone(countryCode, username)
               : DetectUserRequest.email(username, countryCode: countryCode))
@@ -51,7 +67,7 @@ class _LoginBuilderState extends State<LoginBuilder> with MountedStateMixin {
           mountedSetState();
         },
         onSuccess: (response) {
-          _step = _escapeLoginStep(response.loginStep);
+          _step.value = _escapeLoginStep(response.loginStep);
           _isLoading = false;
           mountedSetState();
           _notifyListener();
@@ -74,7 +90,7 @@ class _LoginBuilderState extends State<LoginBuilder> with MountedStateMixin {
           mountedSetState();
         },
         onSuccess: (response) {
-          _step = _escapeLoginStep(response.loginStep);
+          _step.value = _escapeLoginStep(response.loginStep);
           _isLoading = false;
           mountedSetState();
           _notifyListener();
@@ -97,7 +113,7 @@ class _LoginBuilderState extends State<LoginBuilder> with MountedStateMixin {
           mountedSetState();
         },
         onSuccess: (response) {
-          _step = _escapeLoginStep(response.loginStep);
+          _step.value = _escapeLoginStep(response.loginStep);
           _isLoading = false;
           mountedSetState();
           _notifyListener();
@@ -120,7 +136,7 @@ class _LoginBuilderState extends State<LoginBuilder> with MountedStateMixin {
           mountedSetState();
         },
         onSuccess: (response) {
-          _step = _escapeLoginStep(response.loginStep);
+          _step.value = _escapeLoginStep(response.loginStep);
           _isLoading = false;
           mountedSetState();
           _notifyListener();
@@ -134,7 +150,7 @@ class _LoginBuilderState extends State<LoginBuilder> with MountedStateMixin {
       );
     }, updateStep: (step) {
       mountedSetState(() {
-        _step = _escapeLoginStep(step);
+        _step.value = _escapeLoginStep(step);
       });
     });
   }
@@ -143,12 +159,12 @@ class _LoginBuilderState extends State<LoginBuilder> with MountedStateMixin {
     if (step != LoginStep.success && step != LoginStep.failure && step != LoginStep.showUpgrade) {
       return step;
     }
-    return _step;
+    return _step.value;
   }
 
   void _notifyListener() {
     if (widget.listener != null) {
-      widget.listener!(_step);
+      widget.listener!(_step.value);
     }
   }
 }
