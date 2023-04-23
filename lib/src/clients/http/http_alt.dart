@@ -62,8 +62,7 @@ class HttpAlt extends ChangeNotifier {
     required this.navKey,
     http.Client? client,
     Map<Type, ResType>? responseModels,
-  })
-      : assert(Uri.parse(config.host).isAbsolute, '${config.host} must be a valid url.'),
+  })  : assert(Uri.parse(config.host).isAbsolute, '${config.host} must be a valid url.'),
         assert(config.port == null || (config.port! >= -1 && config.port! <= 65535),
             '${config.port} must be a number between -1 and 65535. or null.'),
         responseModels = {
@@ -289,8 +288,8 @@ class HttpAlt extends ChangeNotifier {
               model: response != null
                   ? response(result ?? {'success': -1})
                   : (responseModels != null && responseModels!.containsKey(T)
-                  ? responseModels![T]!(result ?? {'success': -1}) as T
-                  : null),
+                      ? responseModels![T]!(result ?? {'success': -1}) as T
+                      : null),
             );
             if (onSuccess != null) onSuccess(res);
             return res;
@@ -697,27 +696,27 @@ class HttpAlt extends ChangeNotifier {
   }) async {
     assert(languageCode == null || languageCode.length == 2);
     assert(response != null || responseModels?.containsKey(T) == true,
-    'Provide a [response] or add your response parser to [responseModels] in ApiWrapper');
+        'Provide a [response] or add your response parser to [responseModels] in ApiWrapper');
     if (onStart != null) onStart();
 
     Future<BaseResponse<T>> retryClosure() => uploadFile<T>(
-      request,
-      response: response,
-      languageCode: languageCode,
-      ignoreExpireTime: ignoreExpireTime,
-      showRetry: showRetry,
-      onStart: onStart,
-      headers: headers,
-      encoding: encoding,
-      onSuccess: onSuccess,
-      showProgress: showProgress,
-      filePath: filePath,
-      fileName: fileName,
-      blobData: blobData,
-      onProgress: onProgress,
-      cancelToken: cancelToken,
-      fileKey: fileKey,
-    );
+          request,
+          response: response,
+          languageCode: languageCode,
+          ignoreExpireTime: ignoreExpireTime,
+          showRetry: showRetry,
+          onStart: onStart,
+          headers: headers,
+          encoding: encoding,
+          onSuccess: onSuccess,
+          showProgress: showProgress,
+          filePath: filePath,
+          fileName: fileName,
+          blobData: blobData,
+          onProgress: onProgress,
+          cancelToken: cancelToken,
+          fileKey: fileKey,
+        );
 
     _showProgress(showProgress);
 
@@ -841,7 +840,7 @@ class HttpAlt extends ChangeNotifier {
             barrierDismissible: false,
             useRootNavigator: true,
             builder: (context) =>
-                progressWidget ??
+            progressWidget ??
                 Center(
                   child: Container(
                     decoration: BoxDecoration(

@@ -4,14 +4,16 @@ class Country extends Equatable {
   final String symbol;
   final String name;
   final String? flag;
+  final int? countryCode;
 
-  const Country(this.symbol, this.name, {this.flag});
+  const Country(this.symbol, this.name, {this.flag, this.countryCode});
 
   factory Country.fromJson(Json json) {
     return Country(
       JsonChecker.optString(json, 'symbol', defValue: '-1')!,
       JsonChecker.optString(json, 'name', defValue: 'Unknown')!,
       flag: JsonChecker.optString(json, 'flag'),
+      countryCode: JsonChecker.optInt(json, 'country_code'),
     );
   }
 
@@ -19,6 +21,8 @@ class Country extends Equatable {
     return {
       'symbol': symbol,
       'name': name,
+      if (flag != null) 'flag': flag,
+      if (countryCode != null) 'country_code': countryCode,
     };
   }
 
