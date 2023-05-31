@@ -55,15 +55,17 @@ String cookieDomain = '';
 /// Initialize Api
 class ApexApi {
   static Future<void> init({
+    /// The domain name that the token cookie should be saved under that name
     String? cookieDomainName,
 
-    /// these will be called to set imei, imsi, fingerprint
+    /// these will be called to set imei, imsi, fingerprint for each platform
     StringCallback? androidFingerprint,
     StringCallback? webFingerprint,
     StringCallback? iosFingerprint,
     StringCallback? windowsFingerprint,
     StringCallback? imeiCallback,
     StringCallback? imsiCallback,
+    bool askPhonePermission = true,
   }) async {
     StorageUtil.getInstance();
 
@@ -100,11 +102,7 @@ class ApexApi {
         final value = await androidFingerprint();
         ApexApiDb.setFingerprint(value);
       } else {
-        Map<Permission, PermissionStatus> permissionStatus = await [
-          Permission.phone,
-        ].request();
-
-        if (permissionStatus.values.every((ps) => ps.isGranted)) {
+        void createAndSetAndroidId() async {
           DeviceInfoPlugin deviceInfo = DeviceInfoPlugin();
           AndroidDeviceInfo androidInfo = await deviceInfo.androidInfo;
 
@@ -119,12 +117,24 @@ class ApexApi {
               .toString();
 
           ApexApiDb.setFingerprint(fp);
+        }
+
+        if (askPhonePermission) {
+          Map<Permission, PermissionStatus> permissionStatus = await [
+            Permission.phone,
+          ].request();
+
+          if (permissionStatus.values.every((ps) => ps.isGranted)) {
+            createAndSetAndroidId();
+          } else {
+            Fluttertoast.showToast(
+              msg: 'Grant all permissions!',
+              gravity: ToastGravity.BOTTOM,
+            );
+            exit(0);
+          }
         } else {
-          Fluttertoast.showToast(
-            msg: 'Grant all permissions!',
-            gravity: ToastGravity.BOTTOM,
-          );
-          exit(0);
+          createAndSetAndroidId();
         }
       }
     } else if (defaultTargetPlatform == TargetPlatform.windows) {
