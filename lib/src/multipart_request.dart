@@ -67,19 +67,19 @@ class FileRequest extends http.MultipartRequest {
     final byteStream = super.finalize();
     if (onProgress == null) return byteStream;
 
-    final total = contentLength;
     int bytes = 0;
 
-    final t = StreamTransformer.fromHandlers(
-      handleData: (List<int> data, EventSink<List<int>> sink) {
-        bytes += data.length;
-        if (onProgress != null) {
-          onProgress!(bytes, total);
-        }
-        sink.add(data);
-      },
+    final stream = byteStream.transform(
+      StreamTransformer.fromHandlers(
+        handleData: (List<int> data, EventSink<List<int>> sink) async {
+          sink.add(data);
+          bytes += data.length;
+          if (onProgress != null) {
+            onProgress!(bytes, contentLength);
+          }
+        },
+      ),
     );
-    final stream = byteStream.transform(t);
     return http.ByteStream(stream);
   }
 }

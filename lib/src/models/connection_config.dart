@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:apex_api/src/models/reactive_widget_options.dart';
 import 'package:equatable/equatable.dart';
 import 'package:flutter/foundation.dart';
 import 'package:logger/logger.dart';
@@ -10,6 +11,8 @@ import '../../cipher/models/key_pair.dart';
 class ApiConfig extends Equatable {
   const ApiConfig(
     this.host, {
+    this.enableGzip = false,
+    this.reactiveWidgetOptions,
     this.handlerNamespace,
     this.namespace = 'data',
     this.eventName = 'message',
@@ -30,6 +33,8 @@ class ApiConfig extends Equatable {
     this.useMocks = false,
     this.onTimeout,
   });
+
+  final ReactiveWidgetOptions? reactiveWidgetOptions;
 
   final KeyPair? iosKey;
   final KeyPair? webKey;
@@ -61,10 +66,12 @@ class ApiConfig extends Equatable {
 
   final String? handlerNamespace;
 
+  final bool enableGzip;
+
   bool get debugMode => logLevel != Level.nothing;
 
   String? get secretKey => encrypt
-      ? (kIsWeb || debugMode
+      ? (kIsWeb
           ? webKey!.secretKey
           : (defaultTargetPlatform == TargetPlatform.android
               ? androidKey!.secretKey
@@ -73,8 +80,9 @@ class ApiConfig extends Equatable {
                   : iosKey!.secretKey)))
       : null;
 
-  String? get publicKey => encrypt
-      ? (kIsWeb || debugMode
+  String? get publicKey =>
+      encrypt
+      ? (kIsWeb
           ? webKey!.publicKey
           : (defaultTargetPlatform == TargetPlatform.android
               ? androidKey!.publicKey
@@ -83,7 +91,7 @@ class ApiConfig extends Equatable {
                   : iosKey!.publicKey)))
       : null;
 
-  bool get encrypt => kIsWeb || debugMode
+  bool get encrypt => kIsWeb
       ? webKey != null
       : (defaultTargetPlatform == TargetPlatform.android
           ? androidKey != null
@@ -91,7 +99,7 @@ class ApiConfig extends Equatable {
               ? windowsKey != null
               : iosKey != null));
 
-  String get os => kIsWeb || debugMode
+  String get os => kIsWeb
       ? 'W'
       : defaultTargetPlatform == TargetPlatform.android
           ? 'A'

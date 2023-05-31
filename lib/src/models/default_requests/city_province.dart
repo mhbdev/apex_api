@@ -91,7 +91,7 @@ class Province extends Equatable {
     return {
       'id': id,
       'name': name,
-      'cities': cities.map((e) => e.toJson()),
+      'cities': cities.map((e) => e.toJson()).toList(),
     };
   }
 

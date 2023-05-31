@@ -1,11 +1,16 @@
 library apex_api;
 
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:apex_api/src/preferences/database.dart';
 import 'package:crypto/crypto.dart';
+import 'package:device_info_plus/device_info_plus.dart';
 import 'package:fingerprintjs/fingerprintjs.dart'
     if (dart.library.io) 'package:apex_api/src/unimplemented_fingerprint.dart';
+import 'package:flutter/foundation.dart';
+import 'package:fluttertoast/fluttertoast.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 import 'src/preferences/storage_util.dart';
 import 'src/typedefs.dart';
@@ -27,6 +32,7 @@ export 'src/extensions/map_extensions.dart';
 export 'src/models/connection_config.dart';
 export 'src/models/default_requests/city_province.dart';
 export 'src/models/default_requests/login.dart';
+export 'src/models/reactive_widget_options.dart';
 export 'src/models/request.dart';
 export 'src/models/response.dart';
 export 'src/notifier/change_notifier_builder.dart';
@@ -52,7 +58,10 @@ class ApexApi {
     String? cookieDomainName,
 
     /// these will be called to set imei, imsi, fingerprint
-    StringCallback? fingerprintCallback,
+    StringCallback? androidFingerprint,
+    StringCallback? webFingerprint,
+    StringCallback? iosFingerprint,
+    StringCallback? windowsFingerprint,
     StringCallback? imeiCallback,
     StringCallback? imsiCallback,
   }) async {
@@ -63,26 +72,72 @@ class ApexApi {
     if (imeiCallback != null) imeiCallback().then(ApexApiDb.setImei);
     if (imsiCallback != null) imsiCallback().then(ApexApiDb.setImsi);
 
-    if (fingerprintCallback != null) {
-      final value = await fingerprintCallback();
-      ApexApiDb.setFingerprint(value);
-    } else {
-      // provide my own fingerprint
-      if (!ApexApiDb.hasFingerprint) {
-        final finger = (await Fingerprint.get());
-        finger.removeWhere((e) => e.key == 'screenResolution');
-        finger.removeWhere((e) => e.key == 'adBlock');
-        final String fingerprint = md5
-            .convert(utf8.encode(finger
-                .map((e) => e.value.toString())
-                .join('')
-                .replaceAll('[', '')
-                .replaceAll(']', '')
-                .replaceAll(',', '')
-                .replaceAll(' ', '')))
-            .toString();
+    if (kIsWeb) {
+      if (webFingerprint != null) {
+        final value = await webFingerprint();
+        ApexApiDb.setFingerprint(value);
+      } else {
+        // provide my own fingerprint using fingerprintjs2
+        if (!ApexApiDb.hasFingerprint) {
+          final finger = (await Fingerprint.get());
+          finger.removeWhere((e) => e.key == 'screenResolution');
+          finger.removeWhere((e) => e.key == 'adBlock');
+          final String fingerprint = md5
+              .convert(utf8.encode(finger
+                  .map((e) => e.value.toString())
+                  .join('')
+                  .replaceAll('[', '')
+                  .replaceAll(']', '')
+                  .replaceAll(',', '')
+                  .replaceAll(' ', '')))
+              .toString();
 
-        ApexApiDb.setFingerprint(fingerprint.toString());
+          ApexApiDb.setFingerprint(fingerprint.toString());
+        }
+      }
+    } else if (defaultTargetPlatform == TargetPlatform.android) {
+      if (androidFingerprint != null) {
+        final value = await androidFingerprint();
+        ApexApiDb.setFingerprint(value);
+      } else {
+        Map<Permission, PermissionStatus> permissionStatus = await [
+          Permission.phone,
+        ].request();
+
+        if (permissionStatus.values.every((ps) => ps.isGranted)) {
+          DeviceInfoPlugin deviceInfo = DeviceInfoPlugin();
+          AndroidDeviceInfo androidInfo = await deviceInfo.androidInfo;
+
+          final fp = md5
+              .convert(utf8.encode(
+                  (((androidInfo.serialNumber.isNotEmpty && androidInfo.serialNumber != 'null')
+                          ? androidInfo.serialNumber
+                          : ((androidInfo.id.isNotEmpty && androidInfo.id != 'null')
+                              ? androidInfo.id
+                              : androidInfo.fingerprint))) +
+                      androidInfo.isPhysicalDevice.toString()))
+              .toString();
+
+          ApexApiDb.setFingerprint(fp);
+        } else {
+          Fluttertoast.showToast(
+            msg: 'Grant all permissions!',
+            gravity: ToastGravity.BOTTOM,
+          );
+          exit(0);
+        }
+      }
+    } else if (defaultTargetPlatform == TargetPlatform.windows) {
+      if (windowsFingerprint != null) {
+        final value = await windowsFingerprint();
+        ApexApiDb.setFingerprint(value);
+      } else {
+        DeviceInfoPlugin deviceInfo = DeviceInfoPlugin();
+        WindowsDeviceInfo windowsInfo = await deviceInfo.windowsInfo;
+
+        final windowsId = windowsInfo.deviceId;
+        final fp = md5.convert(utf8.encode(windowsId)).toString();
+        ApexApiDb.setFingerprint(fp);
       }
     }
   }

@@ -1,12 +1,12 @@
 # This is a generated file; do not edit or check into version control.
-device_info=C:\\Users\\MonoBit\\AppData\\Local\\Pub\\Cache\\hosted\\pub.dev\\device_info-2.0.3\\
+device_info_plus=C:\\Users\\MonoBit\\AppData\\Local\\Pub\\Cache\\hosted\\pub.dev\\device_info_plus-9.0.0\\
+fluttertoast=C:\\Users\\MonoBit\\AppData\\Local\\Pub\\Cache\\hosted\\pub.dev\\fluttertoast-8.2.1\\
 path_provider_linux=C:\\Users\\MonoBit\\AppData\\Local\\Pub\\Cache\\hosted\\pub.dev\\path_provider_linux-2.1.9\\
-path_provider_windows=C:\\Users\\MonoBit\\AppData\\Local\\Pub\\Cache\\hosted\\pub.dev\\path_provider_windows-2.1.4\\
-platform_device_id=C:\\Users\\MonoBit\\AppData\\Local\\Pub\\Cache\\hosted\\pub.dev\\platform_device_id-1.0.1\\
-platform_device_id_linux=C:\\Users\\MonoBit\\AppData\\Local\\Pub\\Cache\\hosted\\pub.dev\\platform_device_id_linux-1.0.0\\
-platform_device_id_macos=C:\\Users\\MonoBit\\AppData\\Local\\Pub\\Cache\\hosted\\pub.dev\\platform_device_id_macos-1.0.0\\
-platform_device_id_web=C:\\Users\\MonoBit\\AppData\\Local\\Pub\\Cache\\hosted\\pub.dev\\platform_device_id_web-1.0.0\\
-platform_device_id_windows=C:\\Users\\MonoBit\\AppData\\Local\\Pub\\Cache\\hosted\\pub.dev\\platform_device_id_windows-1.0.0\\
+path_provider_windows=C:\\Users\\MonoBit\\AppData\\Local\\Pub\\Cache\\hosted\\pub.dev\\path_provider_windows-2.1.6\\
+permission_handler=C:\\Users\\MonoBit\\AppData\\Local\\Pub\\Cache\\hosted\\pub.dev\\permission_handler-10.2.0\\
+permission_handler_android=C:\\Users\\MonoBit\\AppData\\Local\\Pub\\Cache\\hosted\\pub.dev\\permission_handler_android-10.2.0\\
+permission_handler_apple=C:\\Users\\MonoBit\\AppData\\Local\\Pub\\Cache\\hosted\\pub.dev\\permission_handler_apple-9.0.8\\
+permission_handler_windows=C:\\Users\\MonoBit\\AppData\\Local\\Pub\\Cache\\hosted\\pub.dev\\permission_handler_windows-0.1.2\\
 shared_preferences=C:\\Users\\MonoBit\\AppData\\Local\\Pub\\Cache\\hosted\\pub.dev\\shared_preferences-2.0.18\\
 shared_preferences_android=C:\\Users\\MonoBit\\AppData\\Local\\Pub\\Cache\\hosted\\pub.dev\\shared_preferences_android-2.0.16\\
 shared_preferences_foundation=C:\\Users\\MonoBit\\AppData\\Local\\Pub\\Cache\\hosted\\pub.dev\\shared_preferences_foundation-2.1.4\\

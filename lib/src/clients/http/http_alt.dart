@@ -29,7 +29,7 @@ enum ConnectionStatus { reconnecting, connecting, connected, error, destroyed, t
 
 class HttpAlt extends ChangeNotifier {
   late io.Socket socket;
-  final http.Client? client;
+  http.Client? client;
   final ApiConfig config;
   final Logger logger;
   final GlobalKey<NavigatorState> navKey;
@@ -91,6 +91,8 @@ class HttpAlt extends ChangeNotifier {
         options = config.options ??
             io.OptionBuilder().disableAutoConnect().disableForceNew().disableForceNewConnection() {
     if (useSocket && !isSocketInitialized) {
+      print('useSocket: $useSocket\nhost:${config.host}\nport:${config.port}');
+
       socket = io.io(
         '${config.host}${config.port != null ? ':${config.port}' : ''}/${config.namespace}',
         options.setTransports(['websocket']).build(),
@@ -99,39 +101,46 @@ class HttpAlt extends ChangeNotifier {
       connect();
 
       socket.onConnect((data) {
+        print('onConnect $data');
         status = ConnectionStatus.connected;
         _notifyStatus();
       });
 
       socket.onConnectError((data) {
+        print('onConnectError $data');
         _reconnect();
         status = ConnectionStatus.error;
         _notifyStatus();
       });
 
       socket.onError((data) {
+        print('onError $data');
         _reconnect();
         status = ConnectionStatus.error;
         _notifyStatus();
       });
 
       socket.onDisconnect((data) {
+        print('onDisconnect $data');
         _reconnect();
         status = ConnectionStatus.destroyed;
         _notifyStatus();
       });
 
       socket.onReconnect((data) {
+        print('onReconnect $data');
         status = ConnectionStatus.connecting;
         _notifyStatus();
       });
 
       socket.onReconnecting((data) {
+        print('onReconnecting $data');
         status = ConnectionStatus.connecting;
         _notifyStatus();
       });
 
       socket.onConnectTimeout((data) {
+        print('onConnectTimeout $data');
         status = ConnectionStatus.timeout;
         _notifyStatus();
       });
@@ -203,9 +212,18 @@ class HttpAlt extends ChangeNotifier {
     Map<String, String>? headers,
     Encoding? encoding,
     bool ignoreExpireTime = false,
+    Duration? requestTimeout,
   }) async {
     assert(languageCode == null || languageCode.length == 2);
     assert(response != null || responseModels?.containsKey(T) == true);
+
+    if (client != null) {
+      if (client is IOClient) {
+        if (requestTimeout != null) {
+          client = IOClient(HttpClient()..connectionTimeout = requestTimeout);
+        }
+      }
+    }
 
     Future<BaseResponse<T>> retryClosure() => post<T>(
           request,
@@ -218,6 +236,7 @@ class HttpAlt extends ChangeNotifier {
           encoding: encoding,
           onSuccess: onSuccess,
           showProgress: showProgress,
+          requestTimeout: requestTimeout,
         );
 
     if (onStart != null) onStart();
@@ -321,21 +340,30 @@ class HttpAlt extends ChangeNotifier {
         'version': (request.isPrivate ? config.privateVersion : config.publicVersion),
         config.namespace: requestMessage
       });
+
+      var gzip = GZipCodec();
+
       http.Response httpResponse = await (client != null
           ? client!
-          .post(Uri.parse(url),
-          headers: headers,
-          body: {'request': requestBody},
-          encoding: encoding ?? Encoding.getByName('utf-8'))
-          .timeout(config.requestTimeout, onTimeout: config.onTimeout)
+              .post(
+                Uri.parse(url),
+                headers: headers,
+                body: config.enableGzip
+                    ? gzip.encode(requestBody.codeUnits)
+                    : {'request': requestBody},
+                encoding: encoding ?? Encoding.getByName('utf-8'),
+              )
+              .timeout(requestTimeout ?? config.requestTimeout, onTimeout: config.onTimeout)
           : http
-          .post(
-        Uri.parse(url),
-        headers: headers,
-        body: {'request': requestBody},
-        encoding: encoding ?? Encoding.getByName('utf-8'),
-      )
-          .timeout(config.requestTimeout, onTimeout: config.onTimeout));
+              .post(
+                Uri.parse(url),
+                headers: headers,
+                body: config.enableGzip
+                    ? gzip.encode(requestBody.codeUnits)
+                    : {'request': requestBody},
+                encoding: encoding ?? Encoding.getByName('utf-8'),
+              )
+              .timeout(requestTimeout ?? config.requestTimeout, onTimeout: config.onTimeout));
 
       if (httpResponse.statusCode == 200) {
         String responseMessage;
@@ -406,6 +434,7 @@ class HttpAlt extends ChangeNotifier {
     T Function(Json json)? response,
     VoidCallback? onStart,
     ValueChanged<BaseResponse<T>>? onSuccess,
+    OnConnectionError? onError,
     String? languageCode,
     bool showProgress = false,
     bool showRetry = false,
@@ -418,7 +447,7 @@ class HttpAlt extends ChangeNotifier {
     assert(response != null || responseModels?.containsKey(T) == true);
 
     Future<BaseResponse<T>> retryClosure() => emit<T>(
-          request,
+      request,
           response: response,
           languageCode: languageCode,
           ignoreExpireTime: ignoreExpireTime,
@@ -427,6 +456,7 @@ class HttpAlt extends ChangeNotifier {
           headers: headers,
           encoding: encoding,
           onSuccess: onSuccess,
+          onError: onError,
           showProgress: showProgress,
         );
 
@@ -530,44 +560,11 @@ class HttpAlt extends ChangeNotifier {
         'os': config.os,
         'private': (request.isPrivate ? 1 : 0),
         'version': (request.isPrivate ? config.privateVersion : config.publicVersion),
-        config.namespace: requestMessage
+        'data': requestMessage
       });
 
-      socket.emitWithAck(config.eventName, requestBody, ack: (m) {
-        m = m.toString();
-        String responseMessage = m;
-        if (((request.encrypt ?? false) || (config.encrypt))) {
-          responseMessage = m.trim();
-        }
-
-        responseMessage = _decrypt(crypto, request, responseMessage);
-
-        logger.i('Response: $responseMessage');
-
-        final decodedResponse = jsonDecode(responseMessage);
-        res = BaseResponse<T>(
-          data: decodedResponse,
-          model: response != null
-              ? response(decodedResponse)
-              : (responseModels != null && responseModels!.containsKey(T)
-                  ? responseModels![T]!(decodedResponse) as T
-                  : null),
-        );
-
-        // Save response to storage if it has save_local_duration parameter
-        if (res!.hasData &&
-            res!.containsKey('save_local_duration') &&
-            res!.data!['save_local_duration'] > 0) {
-          StorageUtil.putString(
-            storageKey,
-            jsonEncode(<String, dynamic>{...(res!.data ?? {}), 'expires_at': res!.expiresAt}),
-          );
-        }
-        _hideProgress(showProgress);
-
-        if (onSuccess != null) onSuccess(res!);
-        return res;
-      });
+      res = await emitWithFutureAck<T>(
+          crypto, request, requestBody, response, storageKey, onSuccess, onError, showProgress);
     } on FormatException catch (e, stackTrace) {
       logger.e('Could not resolve json format parsing!', e, stackTrace);
       exception = ResponseParseException();
@@ -583,8 +580,8 @@ class HttpAlt extends ChangeNotifier {
     } finally {
       _hideProgress(showProgress);
       if (res != null) {
-        _handleMessage(request, res!);
-        _handleLoginStep(request, res!);
+        _handleMessage(request, res);
+        _handleLoginStep(request, res);
       }
     }
 
@@ -606,6 +603,8 @@ class HttpAlt extends ChangeNotifier {
         }
       } on FormatException {
         completer.completeError(ServerErrorException('Could not parse server response!'));
+      } catch (e) {
+        completer.completeError(ServerErrorException('Something went wrong $e'));
       }
     });
     return completer.future;
@@ -748,6 +747,7 @@ class HttpAlt extends ChangeNotifier {
       },
       config.connectionTimeout,
     );
+
     if (blobData != null) {
       req.files.add(http.MultipartFile.fromBytes(fileKey, blobData,
           contentType: MediaType('application', 'octet-stream'), filename: fileName));
@@ -901,6 +901,67 @@ class HttpAlt extends ChangeNotifier {
     } else {
       completer.complete(placeholder);
     }
+    return completer.future;
+  }
+
+  Future<BaseResponse<T>> emitWithFutureAck<T extends DataModel>(crypto, request, requestBody,
+      response, storageKey, onSuccess, OnConnectionError? onError, showProgress) {
+    Completer<BaseResponse<T>> completer = Completer<BaseResponse<T>>();
+
+    socket.emitWithAck(config.eventName, requestBody, ack: (m) {
+      BaseResponse<T>? res;
+      try {
+        m = m.toString();
+        String responseMessage = m;
+        if (((request.encrypt ?? false) || (config.encrypt))) {
+          responseMessage = m.trim();
+        }
+
+        responseMessage = _decrypt(crypto, request, responseMessage);
+
+        logger.i('Response: $responseMessage');
+
+        final decodedResponse = jsonDecode(responseMessage);
+        res = BaseResponse<T>(
+          data: decodedResponse,
+          model: response != null
+              ? response(decodedResponse)
+              : (responseModels != null && responseModels!.containsKey(T)
+                  ? responseModels![T]!(decodedResponse) as T
+                  : null),
+        );
+
+        // Save response to storage if it has save_local_duration parameter
+        if (res.hasData &&
+            res.containsKey('save_local_duration') &&
+            res.data!['save_local_duration'] > 0) {
+          StorageUtil.putString(
+            storageKey,
+            jsonEncode(<String, dynamic>{...(res.data ?? {}), 'expires_at': res.expiresAt}),
+          );
+        }
+        _hideProgress(showProgress);
+        if (onSuccess != null) onSuccess(res);
+      } on FormatException catch (e, stackTrace) {
+        logger.e('Response Parse Error!', e, stackTrace);
+        if (!completer.isCompleted) {
+          completer.complete(BaseResponse(
+              error: ResponseParseException('Could not parse the response: $m'),
+              errorMessage: 'Could not parse the response: $m'));
+        }
+        if (onError != null) {
+          onError(ResponseParseException('Could not parse the response: $m'), e);
+        }
+      } catch (e) {
+        if (onError != null) {
+          onError(ServerErrorException(), e);
+        }
+        if (!completer.isCompleted) {
+          completer.complete(BaseResponse(error: ServerErrorException()));
+        }
+      }
+    });
+
     return completer.future;
   }
 }

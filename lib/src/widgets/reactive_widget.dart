@@ -42,15 +42,15 @@ class ReactiveController<DM extends DataModel> {
 
 class ReactiveWidget<DM extends DataModel> extends StatefulWidget {
   final Request request;
-  final Widget loadingWidget;
-  final Widget Function(
-          BaseResponse<DM> response, Future<BaseResponse<DM>> Function([bool? silent]) onRetry)
-      failureWidget;
+  final Widget? loadingWidget;
   final Widget Function(
           BaseResponse<DM> response, Future<BaseResponse<DM>> Function([bool? silent]) onRetry)
       successWidget;
+  final Widget Function(
+          BaseResponse<DM> response, Future<BaseResponse<DM>> Function([bool? silent]) onRetry)?
+      failureWidget;
   final Widget Function(ServerException exception, Object error,
-      Future<BaseResponse<DM>> Function([bool? silent]) onRetry) retryWidget;
+      Future<BaseResponse<DM>> Function([bool? silent]) onRetry)? retryWidget;
   final bool ignoreExpireTime;
   final ReactiveController<DM>? controller;
   final void Function(
@@ -66,10 +66,10 @@ class ReactiveWidget<DM extends DataModel> extends StatefulWidget {
   const ReactiveWidget({
     Key? key,
     required this.request,
-    required this.loadingWidget,
-    required this.failureWidget,
+    this.loadingWidget,
     required this.successWidget,
-    required this.retryWidget,
+    this.failureWidget,
+    this.retryWidget,
     this.response,
     this.listener,
     this.ignoreExpireTime = false,
@@ -84,7 +84,7 @@ class ReactiveWidget<DM extends DataModel> extends StatefulWidget {
 }
 
 class _ReactiveWidgetState<DM extends DataModel> extends State<ReactiveWidget<DM>>
-    with AutomaticKeepAliveClientMixin, WidgetLoadMixin {
+    with AutomaticKeepAliveClientMixin, WidgetLoadMixin, MountedStateMixin {
   late final StreamController<ReactiveResponse<DM>> _controller;
 
   Map<Request, BaseResponse<DM>> _storedRequests = {};
@@ -118,18 +118,30 @@ class _ReactiveWidgetState<DM extends DataModel> extends State<ReactiveWidget<DM
           if (snapshot.hasData && snapshot.data != null) {
             final data = snapshot.data!;
             if (data.state == ReactiveState.loading) {
-              return widget.loadingWidget;
+              return widget.loadingWidget ??
+                  context.http.config.reactiveWidgetOptions?.loadingWidget ??
+                  const Center(
+                    child: CircularProgressIndicator(),
+                  );
             } else if (data.state == ReactiveState.failure) {
-              return widget.failureWidget(data.response!, _sendRequest);
+              return Function.apply(
+                  widget.failureWidget ?? context.http.config.reactiveWidgetOptions!.failureWidget,
+                  [data.response!, _sendRequest]);
             } else if (data.state == ReactiveState.success) {
               return widget.successWidget(data.response!, _sendRequest);
             }
           } else if (snapshot.hasError && snapshot.error != null) {
             final error = snapshot.error! as ReactiveError;
-            return widget.retryWidget(error.exception, error.error, _sendRequest);
+            return Function.apply(
+                widget.retryWidget ?? context.http.config.reactiveWidgetOptions!.retryWidget,
+                [error.exception, error.error, _sendRequest]);
           }
 
-          return widget.loadingWidget;
+          return widget.loadingWidget ??
+              context.http.config.reactiveWidgetOptions?.loadingWidget ??
+              const Center(
+                child: CircularProgressIndicator(),
+              );
         }
 
         if (widget.wrapper != null) {
@@ -151,6 +163,8 @@ class _ReactiveWidgetState<DM extends DataModel> extends State<ReactiveWidget<DM
   }
 
   Future<BaseResponse<DM>> _sendRequest([bool? silent]) {
+    /// It was necessary because some frames and states were being passed
+    mountedSetState();
     Completer<BaseResponse<DM>> completer = Completer<BaseResponse<DM>>();
     WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
       context.http.post<DM>(

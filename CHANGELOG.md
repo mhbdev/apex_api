@@ -1,3 +1,7 @@
+## 2.0.7
+
+* Major updates on ReactiveWidget
+
 ## 2.0.6
 
 * LoginBuilder's State can be maintained using a ValueNotifier being passed as `controller`

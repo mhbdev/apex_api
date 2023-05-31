@@ -113,6 +113,7 @@ abstract class Request extends Equatable {
     ValueChanged<BaseResponse<T>>? onSuccess,
     OnConnectionError? onError,
     bool ignoreExpireTime = false,
+    Duration? requestTimeout,
   }) {
     try {
       return context.http
@@ -123,7 +124,8 @@ abstract class Request extends Equatable {
               showRetry: showRetry,
               onStart: onStart,
               onSuccess: onSuccess,
-              ignoreExpireTime: ignoreExpireTime)
+              ignoreExpireTime: ignoreExpireTime,
+              requestTimeout: requestTimeout)
           .catchError((e) {
         if (onError != null) {
           onError(ServerErrorException('Maybe timeout!'), e);
@@ -181,13 +183,14 @@ class SimpleRequest extends Request {
   final Json? responseMockData;
 
   factory SimpleRequest.empty({bool? encrypt, Json? responseMockData}) => SimpleRequest(
-    0,
-    isEmpty: true,
-    encrypt: encrypt,
-    responseMockData: responseMockData,
-  );
+        0,
+        isEmpty: true,
+        encrypt: encrypt,
+        responseMockData: responseMockData,
+      );
 
-  SimpleRequest(int action, {
+  SimpleRequest(
+    int action, {
     this.data,
     this.responseMockData,
     bool isPublic = false,
@@ -197,7 +200,7 @@ class SimpleRequest extends Request {
     bool needCredentials = false,
     bool? encrypt,
   }) : super(
-    action,
+          action,
           groupName: groupName,
           isEmpty: isEmpty,
           needCredentials: needCredentials,

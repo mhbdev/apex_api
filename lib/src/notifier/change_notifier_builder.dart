@@ -24,6 +24,14 @@ class ChangeNotifierBuilderState extends State<ChangeNotifierBuilder> {
     super.dispose();
   }
 
+  @override
+  void didUpdateWidget(covariant ChangeNotifierBuilder oldWidget) {
+    if (oldWidget.notifier != widget.notifier) {
+      widget.notifier.addListener(_listener);
+    }
+    super.didUpdateWidget(oldWidget);
+  }
+
   void _listener() {
     if (mounted) setState(() {});
   }
