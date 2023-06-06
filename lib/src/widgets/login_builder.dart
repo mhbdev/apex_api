@@ -101,10 +101,6 @@ class _LoginBuilderState extends State<LoginBuilder> with MountedStateMixin {
         },
         showProgress: widget.showProgress,
         showRetry: widget.showRetry,
-        onError: (exception, error) {
-          print(error);
-          print(exception);
-        },
       );
     }, (username, {countryCode}) async {
       return (widget.loginType == LoginType.phone && countryCode != null

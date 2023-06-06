@@ -20,11 +20,11 @@ class ReactiveError {
 enum ReactiveState { loading, failure, success, error }
 
 class ReactiveController<DM extends DataModel> {
-  Future<BaseResponse<DM>> Function()? listener;
+  Future<BaseResponse<DM>> Function([bool? silent])? listener;
 
   bool get hasClient => listener != null;
 
-  void setListener(Future<BaseResponse<DM>> Function() l) {
+  void setListener(Future<BaseResponse<DM>> Function([bool? silent]) l) {
     listener = l;
   }
 
@@ -32,9 +32,9 @@ class ReactiveController<DM extends DataModel> {
     listener = null;
   }
 
-  Future<BaseResponse<DM>> reload() {
+  Future<BaseResponse<DM>> reload([bool? silent]) {
     if (listener != null) {
-      return listener!();
+      return listener!(silent);
     }
     return Future.error(Exception('Could not find any listener!'));
   }

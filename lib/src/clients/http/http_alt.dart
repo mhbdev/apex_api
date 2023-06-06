@@ -91,8 +91,6 @@ class HttpAlt extends ChangeNotifier {
         options = config.options ??
             io.OptionBuilder().disableAutoConnect().disableForceNew().disableForceNewConnection() {
     if (useSocket && !isSocketInitialized) {
-      print('useSocket: $useSocket\nhost:${config.host}\nport:${config.port}');
-
       socket = io.io(
         '${config.host}${config.port != null ? ':${config.port}' : ''}/${config.namespace}',
         options.setTransports(['websocket']).build(),
@@ -101,46 +99,39 @@ class HttpAlt extends ChangeNotifier {
       connect();
 
       socket.onConnect((data) {
-        print('onConnect $data');
         status = ConnectionStatus.connected;
         _notifyStatus();
       });
 
       socket.onConnectError((data) {
-        print('onConnectError $data');
         _reconnect();
         status = ConnectionStatus.error;
         _notifyStatus();
       });
 
       socket.onError((data) {
-        print('onError $data');
         _reconnect();
         status = ConnectionStatus.error;
         _notifyStatus();
       });
 
       socket.onDisconnect((data) {
-        print('onDisconnect $data');
         _reconnect();
         status = ConnectionStatus.destroyed;
         _notifyStatus();
       });
 
       socket.onReconnect((data) {
-        print('onReconnect $data');
         status = ConnectionStatus.connecting;
         _notifyStatus();
       });
 
       socket.onReconnecting((data) {
-        print('onReconnecting $data');
         status = ConnectionStatus.connecting;
         _notifyStatus();
       });
 
       socket.onConnectTimeout((data) {
-        print('onConnectTimeout $data');
         status = ConnectionStatus.timeout;
         _notifyStatus();
       });
@@ -181,7 +172,6 @@ class HttpAlt extends ChangeNotifier {
   io.Socket connect({EventHandler? onConnect}) {
     socket.onConnect((data) {
       if (status != ConnectionStatus.connected) {
-        // print('onConnect (${socket.id}) $data');
         status = ConnectionStatus.connected;
         _notifyStatus();
       }
