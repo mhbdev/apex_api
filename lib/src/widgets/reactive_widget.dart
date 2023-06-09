@@ -174,7 +174,11 @@ class _ReactiveWidgetState<DM extends DataModel> extends State<ReactiveWidget<DM
           if (widget.listener != null) {
             widget.listener!(ReactiveState.loading, _sendRequest);
           }
-          if (silent != true) _controller.add(ReactiveResponse(ReactiveState.loading));
+          if (silent != true) {
+            if (!_controller.isClosed) {
+              _controller.add(ReactiveResponse(ReactiveState.loading));
+            }
+          }
         },
         showRetry: false,
         showProgress: false,
@@ -196,7 +200,11 @@ class _ReactiveWidgetState<DM extends DataModel> extends State<ReactiveWidget<DM
           if (widget.listener != null) {
             widget.listener!(ReactiveState.error, _sendRequest, error: reactiveError);
           }
-          if (silent != true) _controller.addError(reactiveError);
+          if (silent != true) {
+            if (!_controller.isClosed) {
+              _controller.addError(reactiveError);
+            }
+          }
           return;
         }
 
@@ -206,15 +214,19 @@ class _ReactiveWidgetState<DM extends DataModel> extends State<ReactiveWidget<DM
           if (widget.listener != null) {
             widget.listener!(ReactiveState.success, _sendRequest, response: response);
           }
-          if (silent != true) {
+          // if (silent != true) {
+          if (!_controller.isClosed) {
             _controller.add(ReactiveResponse(ReactiveState.success, response: response));
           }
+          // }
         } else {
           if (widget.listener != null) {
             widget.listener!(ReactiveState.failure, _sendRequest, response: response);
           }
           if (silent != true) {
-            _controller.add(ReactiveResponse(ReactiveState.failure, response: response));
+            if (!_controller.isClosed) {
+              _controller.add(ReactiveResponse(ReactiveState.failure, response: response));
+            }
           }
         }
       });
