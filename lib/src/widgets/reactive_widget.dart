@@ -60,6 +60,9 @@ class ReactiveWidget<DM extends DataModel> extends StatefulWidget {
       ReactiveState state, Widget child, Future<BaseResponse<DM>> Function([bool? silent]) onRetry,
       {BaseResponse<DM>? response})? wrapper;
   final DM Function(Json json)? response;
+
+  /// Set this parameter to `true` if you need to save different responses of the same request (action)
+  /// Can be used for actions with pagination feature
   final bool storeResponses;
   final StreamController<ReactiveResponse<DM>>? streamController;
 

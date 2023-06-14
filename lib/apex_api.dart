@@ -107,13 +107,15 @@ class ApexApi {
           AndroidDeviceInfo androidInfo = await deviceInfo.androidInfo;
 
           final fp = md5
-              .convert(utf8.encode(
-                  (((androidInfo.serialNumber.isNotEmpty && androidInfo.serialNumber != 'null')
-                          ? androidInfo.serialNumber
-                          : ((androidInfo.id.isNotEmpty && androidInfo.id != 'null')
-                              ? androidInfo.id
-                              : androidInfo.fingerprint))) +
-                      androidInfo.isPhysicalDevice.toString()))
+              .convert(utf8.encode(androidInfo.serialNumber +
+                  androidInfo.id +
+                  androidInfo.fingerprint +
+                  androidInfo.model +
+                  androidInfo.brand +
+                  androidInfo.hardware +
+                  androidInfo.manufacturer +
+                  androidInfo.version.sdkInt.toString() +
+                  androidInfo.isPhysicalDevice.toString()))
               .toString();
 
           ApexApiDb.setFingerprint(fp);
