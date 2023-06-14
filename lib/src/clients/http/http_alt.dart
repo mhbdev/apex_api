@@ -264,9 +264,14 @@ class HttpAlt extends ChangeNotifier {
 
     final imei = ApexApiDb.getImei();
     final imsi = ApexApiDb.getImsi();
+    final additional = ApexApiDb.getAdditional();
     request.addParams({
       if ([1001, 1002, 1003, 1004].contains(request.action)) ...{
-        'additional': {if (imei != null) 'imei': imei, if (imsi != null) 'imsi': imsi},
+        'additional': {
+          if (imei != null) 'imei': imei,
+          if (imsi != null) 'imsi': imsi,
+          if (additional != null) ...additional,
+        },
         if (config.handlerNamespace != null) 'namespace': config.handlerNamespace,
       },
       'fingerprint': fingerprint,
@@ -485,9 +490,14 @@ class HttpAlt extends ChangeNotifier {
 
     final imei = ApexApiDb.getImei();
     final imsi = ApexApiDb.getImsi();
+    final additional = ApexApiDb.getAdditional();
     request.addParams({
       if ([1001, 1002, 1003, 1004].contains(request.action)) ...{
-        'additional': {if (imei != null) 'imei': imei, if (imsi != null) 'imsi': imsi},
+        'additional': {
+          if (imei != null) 'imei': imei,
+          if (imsi != null) 'imsi': imsi,
+          if (additional != null) ...additional,
+        },
         if (config.handlerNamespace != null) 'namespace': config.handlerNamespace,
       },
       'fingerprint': fingerprint,
@@ -716,9 +726,14 @@ class HttpAlt extends ChangeNotifier {
 
     final imei = ApexApiDb.getImei();
     final imsi = ApexApiDb.getImsi();
+    final additional = ApexApiDb.getAdditional();
     request.addParams({
       if ([1001, 1002, 1003, 1004].contains(request.action)) ...{
-        'additional': {if (imei != null) 'imei': imei, if (imsi != null) 'imsi': imsi},
+        'additional': {
+          if (imei != null) 'imei': imei,
+          if (imsi != null) 'imsi': imsi,
+          if (additional != null) ...additional,
+        },
         'namespace': config.handlerNamespace,
       },
       'fingerprint': fingerprint,

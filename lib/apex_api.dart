@@ -105,19 +105,30 @@ class ApexApi {
         void createAndSetAndroidId() async {
           DeviceInfoPlugin deviceInfo = DeviceInfoPlugin();
           AndroidDeviceInfo androidInfo = await deviceInfo.androidInfo;
+          final fingerprint = androidInfo.version.sdkInt.toString() +
+              androidInfo.version.release +
+              androidInfo.version.securityPatch.toString() +
+              androidInfo.manufacturer +
+              androidInfo.hardware +
+              androidInfo.model +
+              androidInfo.id +
+              androidInfo.board +
+              androidInfo.bootloader +
+              androidInfo.brand +
+              androidInfo.device +
+              androidInfo.displayMetrics.toMap().toString() +
+              androidInfo.fingerprint +
+              androidInfo.host;
+          final fp = md5.convert(utf8.encode(fingerprint)).toString();
 
-          final fp = md5
-              .convert(utf8.encode(androidInfo.serialNumber +
-                  androidInfo.id +
-                  androidInfo.fingerprint +
-                  androidInfo.model +
-                  androidInfo.brand +
-                  androidInfo.hardware +
-                  androidInfo.manufacturer +
-                  androidInfo.version.sdkInt.toString() +
-                  androidInfo.isPhysicalDevice.toString()))
-              .toString();
-
+          Json additional = {
+            'manufacturer': androidInfo.manufacturer,
+            'release': androidInfo.version.release,
+            'model': androidInfo.model,
+            'brand': androidInfo.brand,
+            'isPhysicalDevice': androidInfo.isPhysicalDevice,
+          };
+          ApexApiDb.setAdditional(additional);
           ApexApiDb.setFingerprint(fp);
         }
 

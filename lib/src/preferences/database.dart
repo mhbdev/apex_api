@@ -6,6 +6,7 @@ import '../../apex_api.dart';
 class ApexApiDb {
   static String tokenKey = 'apex_api_token';
   static String fingerprintKey = 'apex_api_fingerprint';
+  static String additionalKey = 'apex_api_additional';
   static String imeiKey = 'apex_api_imei';
   static String imsiKey = 'apex_api_imsi';
 
@@ -37,6 +38,13 @@ class ApexApiDb {
 
   static void setFingerprint(String fingerprint) =>
       StorageUtil.putString(fingerprintKey, fingerprint);
+
+  static void setAdditional(Map<String, dynamic> additional) =>
+      StorageUtil.putJson(additionalKey, additional);
+
+  static Json? getAdditional() => StorageUtil.getJson(additionalKey, defValue: null);
+
+  static void removeAdditional() => StorageUtil.putString(additionalKey, null);
 
   static void removeFingerprint() => StorageUtil.putString(fingerprintKey, null);
 
