@@ -8,9 +8,12 @@ import 'package:socket_io_client/socket_io_client.dart';
 
 import '../../cipher/models/key_pair.dart';
 
+String? currentHost;
+
 class ApiConfig extends Equatable {
-  const ApiConfig(
+  ApiConfig(
     this.host, {
+    List<String>? hosts,
     this.enableGzip = false,
     this.reactiveWidgetOptions,
     this.handlerNamespace,
@@ -32,7 +35,13 @@ class ApiConfig extends Equatable {
     this.connectionTimeout = const Duration(seconds: 10),
     this.useMocks = false,
     this.onTimeout,
-  });
+    this.multipleHosts = false,
+  }) : hosts = (hosts != null && multipleHosts ? [host, ...hosts] : [host])
+            // To delete unique urls
+            .toSet()
+            .toList(growable: false) {
+    currentHost = this.hosts.first;
+  }
 
   final ReactiveWidgetOptions? reactiveWidgetOptions;
 
@@ -42,6 +51,11 @@ class ApiConfig extends Equatable {
   final KeyPair? windowsKey;
 
   final String host;
+
+  /// If you want to use multiple host urls you have to set [multipleHosts] to true
+  final List<String> hosts;
+  final bool multipleHosts;
+
   final int? port;
   final OptionBuilder? options;
 
@@ -80,8 +94,7 @@ class ApiConfig extends Equatable {
                   : iosKey!.secretKey)))
       : null;
 
-  String? get publicKey =>
-      encrypt
+  String? get publicKey => encrypt
       ? (kIsWeb
           ? webKey!.publicKey
           : (defaultTargetPlatform == TargetPlatform.android
@@ -109,28 +122,31 @@ class ApiConfig extends Equatable {
                   ? 'D'
                   : 'U';
 
-  ApiConfig copyWith(
-      {String? host,
-      String? namespace,
-      String? eventName,
-      String? languageCode,
-      KeyPair? iosKey,
-      KeyPair? webKey,
-      KeyPair? windowsKey,
-      KeyPair? androidKey,
-      int? privateVersion,
-      int? publicVersion,
-      String? uploadHandlerUrl,
-      OptionBuilder? options,
-      int? port,
-      Level? logLevel,
-      Duration? uploadTimeout,
-      Duration? requestTimeout,
-      bool? useMocks,
-      Duration? connectionTimeout,
-      String? dbVersion,
-      FutureOr<T> Function<T>()? onTimeout,
-      String? handlerNamespace}) {
+  ApiConfig copyWith({
+    String? host,
+    List<String>? hosts,
+    bool? multipleHosts,
+    String? namespace,
+    String? eventName,
+    String? languageCode,
+    KeyPair? iosKey,
+    KeyPair? webKey,
+    KeyPair? windowsKey,
+    KeyPair? androidKey,
+    int? privateVersion,
+    int? publicVersion,
+    String? uploadHandlerUrl,
+    OptionBuilder? options,
+    int? port,
+    Level? logLevel,
+    Duration? uploadTimeout,
+    Duration? requestTimeout,
+    bool? useMocks,
+    Duration? connectionTimeout,
+    String? dbVersion,
+    FutureOr<T> Function<T>()? onTimeout,
+    String? handlerNamespace,
+  }) {
     return ApiConfig(
       host ?? this.host,
       useMocks: useMocks ?? this.useMocks,
@@ -152,6 +168,8 @@ class ApiConfig extends Equatable {
       connectionTimeout: connectionTimeout ?? this.connectionTimeout,
       onTimeout: onTimeout ?? this.onTimeout,
       handlerNamespace: handlerNamespace ?? this.handlerNamespace,
+      hosts: hosts ?? this.hosts,
+      multipleHosts: multipleHosts ?? this.multipleHosts,
     );
   }
 

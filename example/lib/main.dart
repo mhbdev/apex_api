@@ -24,13 +24,13 @@ class MyApp extends StatelessWidget {
       navigatorKey: navKey,
       builder: (context, child) {
         return ApiWrapper(
-          config: const ApiConfig(
+          config: ApiConfig(
             'https://api.apexteam.net/k/faam/handler.php',
             languageCode: 'FA',
             privateVersion: 2,
             publicVersion: 2,
             useMocks: false,
-            webKey: KeyPair(
+            webKey: const KeyPair(
                 "jsGqL9HsDxGhtpFPpMSayS+Y2eGupAvncNVphSqdGbk=", """-----BEGIN PUBLIC KEY-----
 MIICIjANBgkqhkiG9w0BAQEFAAOCAg8AMIICCgKCAgEAwcTpqcXvQcPaq2JiWh2C
 PvSc5aLdtdI2riqLnlFrmD0W0xEcDMTLkahUVyIecEjiR22wLa2F7chz6pNJqSdR

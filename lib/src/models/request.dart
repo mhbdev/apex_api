@@ -16,6 +16,7 @@ abstract class Request extends Equatable {
   final bool? encrypt;
   final bool isEmpty;
   final String? storageUniqueKey;
+  final String? customUrl;
 
   Request(
     this.action, {
@@ -25,9 +26,10 @@ abstract class Request extends Equatable {
     this.groupName,
     this.isPublic = false,
     this.needCredentials = false,
+    this.customUrl,
   });
 
-  String? get handlerUrl => null;
+  String? get handlerUrl => customUrl;
 
   bool get isPrivate => !isPublic;
 
@@ -86,9 +88,11 @@ abstract class Request extends Equatable {
     Json finalResult;
     finalResult = !isEmpty
         ? ({
-      'action': action,
-      if (groupName != null && isPublic) 'group_name': groupName,
-    }..addAll(await json)..addAll(_finalJson))
+            'action': action,
+            if (groupName != null && isPublic) 'group_name': groupName,
+          }
+          ..addAll(await json)
+          ..addAll(_finalJson))
         : {};
 
     if (!isEmpty && ![1001, 1002, 1003, 1004].contains(action)) {
@@ -103,7 +107,8 @@ abstract class Request extends Equatable {
     return finalResult;
   }
 
-  Future<BaseResponse<T>> send<T extends DataModel>(BuildContext context, {
+  Future<BaseResponse<T>> send<T extends DataModel>(
+    BuildContext context, {
     T Function(Json json)? response,
     String? languageCode,
     bool showProgress = false,
@@ -199,14 +204,16 @@ class SimpleRequest extends Request {
     String? storageUniqueKey,
     bool needCredentials = false,
     bool? encrypt,
+    String? customUrl,
   }) : super(
-          action,
+    action,
           groupName: groupName,
           isEmpty: isEmpty,
           needCredentials: needCredentials,
           isPublic: isPublic,
           storageUniqueKey: storageUniqueKey,
           encrypt: encrypt,
+          customUrl: customUrl,
         );
 
   @override

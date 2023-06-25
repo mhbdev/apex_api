@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:apex_api/src/typedefs.dart';
+import 'package:cancellation_token/cancellation_token.dart';
 import 'package:crypto/crypto.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -203,6 +204,7 @@ class HttpAlt extends ChangeNotifier {
     Encoding? encoding,
     bool ignoreExpireTime = false,
     Duration? requestTimeout,
+    CancellationToken? cancellationToken,
   }) async {
     assert(languageCode == null || languageCode.length == 2);
     assert(response != null || responseModels?.containsKey(T) == true);
@@ -227,6 +229,7 @@ class HttpAlt extends ChangeNotifier {
           onSuccess: onSuccess,
           showProgress: showProgress,
           requestTimeout: requestTimeout,
+          cancellationToken: cancellationToken,
         );
 
     if (onStart != null) onStart();
@@ -321,14 +324,16 @@ class HttpAlt extends ChangeNotifier {
 
     // Could not preload the response from storage so make a new call
     final crypto = Crypto(config.secretKey, config.publicKey);
+
+    final String url = request.handlerUrl ?? (currentHost ?? config.host);
+
     logger.i(
-        'Request (${request.action}-${request.isPrivate ? 'Private' : 'Public'}-$T): ${await request.toJson()}');
+        '[$url]: Request (${request.action}-${request.isPrivate ? 'PR' : 'PU'}-$T): ${await request.toJson()}');
     String requestMessage = await _encrypt(crypto, request);
 
     BaseResponse<T>? res;
     ServerException? exception;
     try {
-      final String url = request.handlerUrl ?? config.host;
       var requestBody = jsonEncode({
         'os': config.os,
         'private': (request.isPrivate ? 1 : 0),
@@ -349,6 +354,7 @@ class HttpAlt extends ChangeNotifier {
                 encoding: encoding ?? Encoding.getByName('utf-8'),
               )
               .timeout(requestTimeout ?? config.requestTimeout, onTimeout: config.onTimeout)
+              .asCancellable(cancellationToken)
           : http
               .post(
                 Uri.parse(url),
@@ -358,7 +364,8 @@ class HttpAlt extends ChangeNotifier {
                     : {'request': requestBody},
                 encoding: encoding ?? Encoding.getByName('utf-8'),
               )
-              .timeout(requestTimeout ?? config.requestTimeout, onTimeout: config.onTimeout));
+              .timeout(requestTimeout ?? config.requestTimeout, onTimeout: config.onTimeout)
+              .asCancellable(cancellationToken));
 
       if (httpResponse.statusCode == 200) {
         String responseMessage;
@@ -371,7 +378,7 @@ class HttpAlt extends ChangeNotifier {
         responseMessage = _decrypt(crypto, request, responseMessage);
 
         logger.i(
-            'Response (${request.action}-${request.isPrivate ? 'Private' : 'Public'}-$T): $responseMessage');
+            'Response (${request.action}-${request.isPrivate ? 'PR' : 'PU'}-$T): $responseMessage');
 
         final decodedResponse = jsonDecode(responseMessage);
         res = BaseResponse<T>(
@@ -400,6 +407,9 @@ class HttpAlt extends ChangeNotifier {
         logger.e('Status Code: ${httpResponse.statusCode}');
         exception = ServerErrorException('Response status code is ${httpResponse.statusCode}');
       }
+    } on CancelledException catch (e, stackTrace) {
+      logger.i('Cancelled using a token', e, stackTrace);
+      exception = ClientErrorException('Cancelled using a token');
     } on FormatException catch (e, stackTrace) {
       logger.e('Could not resolve json format parsing!', e, stackTrace);
       exception = ResponseParseException();
@@ -746,8 +756,8 @@ class HttpAlt extends ChangeNotifier {
 
     var req = FileRequest(
       request.method.name,
-      Uri.parse(request.handlerUrl ?? config.host),
-          (bytes, totalBytes) {
+      Uri.parse(request.handlerUrl ?? (currentHost ?? config.host)),
+      (bytes, totalBytes) {
         if (onProgress != null) onProgress(bytes / totalBytes);
       },
       config.connectionTimeout,
