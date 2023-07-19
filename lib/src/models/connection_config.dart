@@ -13,7 +13,7 @@ String? currentHost;
 class ApiConfig extends Equatable {
   ApiConfig(
     this.host, {
-    List<String>? hosts,
+    this.hostCheck = false,
     this.enableGzip = false,
     this.reactiveWidgetOptions,
     this.handlerNamespace,
@@ -35,13 +35,11 @@ class ApiConfig extends Equatable {
     this.connectionTimeout = const Duration(seconds: 10),
     this.useMocks = false,
     this.onTimeout,
-    this.multipleHosts = false,
-  }) : hosts = (hosts != null && multipleHosts ? [host, ...hosts] : [host])
-            // To delete unique urls
-            .toSet()
-            .toList(growable: false) {
-    currentHost = this.hosts.first;
+  }) {
+    currentHost = host;
   }
+
+  final bool hostCheck;
 
   final ReactiveWidgetOptions? reactiveWidgetOptions;
 
@@ -51,10 +49,6 @@ class ApiConfig extends Equatable {
   final KeyPair? windowsKey;
 
   final String host;
-
-  /// If you want to use multiple host urls you have to set [multipleHosts] to true
-  final List<String> hosts;
-  final bool multipleHosts;
 
   final int? port;
   final OptionBuilder? options;
@@ -168,8 +162,6 @@ class ApiConfig extends Equatable {
       connectionTimeout: connectionTimeout ?? this.connectionTimeout,
       onTimeout: onTimeout ?? this.onTimeout,
       handlerNamespace: handlerNamespace ?? this.handlerNamespace,
-      hosts: hosts ?? this.hosts,
-      multipleHosts: multipleHosts ?? this.multipleHosts,
     );
   }
 

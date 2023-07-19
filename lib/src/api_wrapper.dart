@@ -1,5 +1,4 @@
 import 'package:apex_api/apex_api.dart';
-import 'package:cancellation_token/cancellation_token.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -49,13 +48,13 @@ class ApiWrapper extends StatelessWidget {
           ),
         ),
       ],
-      child: config.multipleHosts
+      child: config.hostCheck
           ? _ApiWrapperBuilder(
-        config: config,
-        checkHostsInBackground: checkHostsInBackground,
-        progressWidget: progressWidget,
-        child: child,
-      )
+              config: config,
+              checkHostsInBackground: checkHostsInBackground,
+              progressWidget: progressWidget,
+              child: child,
+            )
           : child,
     );
   }
@@ -88,26 +87,22 @@ class _ApiWrapperBuilder extends StatefulWidget {
 
 class _ApiWrapperBuilderState extends State<_ApiWrapperBuilder> with WidgetLoadMixin {
   final ValueNotifier<bool> _loading = ValueNotifier<bool>(false);
-  final ValueNotifier<int> _hostCounter = ValueNotifier<int>(0);
 
   @override
   void initState() {
-    if (widget.config.multipleHosts) {
+    if (widget.config.hostCheck) {
       if (widget.checkHostsInBackground) {
         _loading.value = false;
       } else {
         _loading.value = true;
       }
     }
-    _hostCounter.addListener(_counterListener);
     super.initState();
   }
 
   @override
   void dispose() {
-    _hostCounter.removeListener(_counterListener);
     _loading.dispose();
-    _hostCounter.dispose();
     super.dispose();
   }
 
@@ -126,80 +121,28 @@ class _ApiWrapperBuilderState extends State<_ApiWrapperBuilder> with WidgetLoadM
 
   @override
   void onLoad(BuildContext context) {
-    // // TEST
-    // print('START TEST');
-    // for (String host in widget.config.hosts) {
-    //   final startTime = DateTime.now().millisecondsSinceEpoch;
-    //   print('$host => $startTime');
-    //   context.http
-    //       .post(
-    //     SimpleRequest(
-    //       666,
-    //       isPublic: true,
-    //       needCredentials: false,
-    //       data: {'message': host},
-    //       customUrl: host,
-    //     ),
-    //     showProgress: false,
-    //     showRetry: false,
-    //     ignoreExpireTime: true,
-    //     requestTimeout: const Duration(seconds: 10),
-    //   )
-    //       .then((response) {
-    //     final duration = DateTime.now().millisecondsSinceEpoch - startTime;
-    //     print('DURATION: $host => ${Duration(milliseconds: duration).inMilliseconds}');
-    //     print('END SUCCESSFUL TEST');
-    //   }).catchError((e) {
-    //     print(e);
-    //     print(e.runtimeType);
-    //     final duration = DateTime.now().millisecondsSinceEpoch - startTime;
-    //     print('DURATION: $host => ${Duration(milliseconds: duration).inMilliseconds}');
-    //     print('END FAILURE TEST');
-    //   });
-    // }
-    //
-    // // TEST
-    if (widget.config.multipleHosts) {
-      final cancelTokens = Map.fromEntries(widget.config.hosts
-          .map((e) => MapEntry<String, CancellationToken>(e, CancellationToken())));
-      for (String host in widget.config.hosts) {
-        context.http
-            .post(
-          SimpleRequest(
-            666,
-            isPublic: true,
-            needCredentials: false,
-            data: {'ping': host},
-            customUrl: host,
-          ),
-          cancellationToken: cancelTokens[host],
-          showProgress: false,
-          showRetry: false,
-          ignoreExpireTime: true,
-          requestTimeout: const Duration(seconds: 10),
-        )
-            .then((response) {
-          if (response.data != null && response.success == 1 && response['pong'] == host) {
-            currentHost = host;
-            _loading.value = false;
-            for (final token in cancelTokens.values) {
-              token.cancel();
-            }
-          }
-          _hostCounter.value++;
-        }).catchError((e) {
-          if (e is! CancelledException) {
-            _hostCounter.value++;
-          }
-        });
-      }
-    }
-  }
-
-  void _counterListener() {
-    if (widget.config.hosts.length == _hostCounter.value && currentHost == null) {
-      currentHost = widget.config.hosts.first;
-      _loading.value = false;
+    if (widget.config.hostCheck) {
+      context.http
+          .post(
+        SimpleRequest(
+          666,
+          isPublic: true,
+          needCredentials: false,
+          customUrl: widget.config.host,
+        ),
+        showProgress: false,
+        showRetry: false,
+        ignoreExpireTime: true,
+        requestTimeout: const Duration(seconds: 10),
+      )
+          .then((response) {
+        if (response.data != null && response.success == 1) {
+          currentHost = response.containsKey('host') && response['host'] != null
+              ? response['host'].toString()
+              : widget.config.host;
+          _loading.value = false;
+        }
+      });
     }
   }
 }
