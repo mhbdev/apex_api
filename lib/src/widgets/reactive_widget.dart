@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:apex_api/apex_api.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/scheduler.dart';
 
 class ReactiveResponse<DM extends DataModel> {
   final ReactiveState state;
@@ -169,7 +170,7 @@ class _ReactiveWidgetState<DM extends DataModel> extends State<ReactiveWidget<DM
     /// It was necessary because some frames and states were being passed
     mountedSetState();
     Completer<BaseResponse<DM>> completer = Completer<BaseResponse<DM>>();
-    WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
+    SchedulerBinding.instance.addPostFrameCallback((timeStamp) {
       context.http.post<DM>(
         widget.request,
         response: widget.response,
