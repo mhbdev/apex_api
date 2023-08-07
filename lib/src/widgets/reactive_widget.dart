@@ -243,8 +243,6 @@ class _ReactiveWidgetState<DM extends DataModel> extends State<ReactiveWidget<DM
 
   @override
   void onLoad(BuildContext context) {
-    if (widget.controller != null) {
-      widget.controller!.setListener(_sendRequest);
-    }
+    if (widget.controller != null) widget.controller!.setListener(_sendRequest);
   }
 }
