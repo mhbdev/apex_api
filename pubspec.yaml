@@ -13,8 +13,8 @@ dependencies:
   pointycastle: ^3.7.3
   encrypt: ^5.0.1
   crypto: ^3.0.2
-  http: ^0.13.5
-  http_parser: ^4.0.1
+  http: ^1.1.0
+  http_parser: ^4.0.2
   socket_io_client: ^1.0.2
   shared_preferences: ^2.0.15
   timezone: ^0.9.0

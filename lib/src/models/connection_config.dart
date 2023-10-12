@@ -35,9 +35,23 @@ class ApiConfig extends Equatable {
     this.connectionTimeout = const Duration(seconds: 10),
     this.useMocks = false,
     this.onTimeout,
-  }) {
+  }) : logger = Logger(
+          level: logLevel,
+          filter: null, // Use the default LogFilter (-> only log in debug mode)
+          printer: PrettyPrinter(
+            methodCount: 2,
+            errorMethodCount: 8,
+            lineLength: 120,
+            colors: true,
+            printEmojis: true,
+            printTime: false,
+          ),
+          output: null, // Use the default LogOutput (-> send everything to console)
+        ) {
     currentHost = host;
   }
+
+  final Logger logger;
 
   final bool hostCheck;
 

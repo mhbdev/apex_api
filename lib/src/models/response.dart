@@ -3,7 +3,7 @@ import '../../apex_api.dart';
 enum LoginStep { showUsername, showOtp, showPassword, showUpgrade, failure, success }
 
 class BaseResponse<DM extends DataModel> {
-  final int success;
+  final int? success;
   final String? message;
   final ServerException? error;
   final String? errorMessage;
@@ -12,7 +12,7 @@ class BaseResponse<DM extends DataModel> {
 
   Json? data;
 
-  bool get isSuccessful => hasData && success >= 0;
+  bool get isSuccessful => hasData && (success != null && success! >= 0);
 
   bool get isFailure => hasError || success == -1;
 
@@ -38,7 +38,7 @@ class BaseResponse<DM extends DataModel> {
   }
 
   BaseResponse({this.data, this.error, this.errorMessage, this.model})
-      : success = JsonChecker.optInt(data, 'success', defValue: -1)!,
+      : success = JsonChecker.optInt(data, 'success'),
         message = JsonChecker.optString(data, 'message', defValue: null),
         expiresAt = DateTime.now().millisecondsSinceEpoch +
             Duration(seconds: JsonChecker.optInt(data, 'save_local_duration', defValue: 0)!)

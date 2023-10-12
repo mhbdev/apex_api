@@ -32,6 +32,7 @@ export 'src/extensions/map_extensions.dart';
 export 'src/models/connection_config.dart';
 export 'src/models/default_requests/city_province.dart';
 export 'src/models/default_requests/login.dart';
+export 'src/models/default_requests/upload.dart';
 export 'src/models/reactive_widget_options.dart';
 export 'src/models/request.dart';
 export 'src/models/response.dart';
@@ -67,7 +68,7 @@ class ApexApi {
     StringCallback? imsiCallback,
     bool askPhonePermission = true,
   }) async {
-    StorageUtil.getInstance();
+    await StorageUtil.getInstance();
 
     cookieDomain = cookieDomainName ?? '';
 

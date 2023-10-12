@@ -17,6 +17,7 @@ import '../../../cipher/crypto.dart';
 import '../../exceptions/exceptions.dart';
 import '../../models/connection_config.dart';
 import '../../models/default_requests/city_province.dart';
+import '../../models/default_requests/upload.dart';
 import '../../models/request.dart';
 import '../../models/response.dart';
 import '../../multipart_request.dart';
@@ -69,22 +70,11 @@ class HttpAlt extends ChangeNotifier {
         responseModels = {
           FetchCountries: FetchCountries.fromJson,
           FetchProvinces: FetchProvinces.fromJson,
+          UploadResponse: UploadResponse.fromJson,
           DataModel: DataModel.fromJson,
           if (responseModels != null) ...responseModels,
         },
-        logger = Logger(
-          level: config.logLevel,
-          filter: null, // Use the default LogFilter (-> only log in debug mode)
-          printer: PrettyPrinter(
-            methodCount: 2,
-            errorMethodCount: 8,
-            lineLength: 120,
-            colors: true,
-            printEmojis: true,
-            printTime: false,
-          ),
-          output: null, // Use the default LogOutput (-> send everything to console)
-        ),
+        logger = config.logger,
         client = client ??
             (kIsWeb
                 ? BrowserClient()
@@ -233,6 +223,7 @@ class HttpAlt extends ChangeNotifier {
         );
 
     if (onStart != null) onStart();
+
     _showProgress(showProgress);
 
     if (config.useMocks == false) {
@@ -254,6 +245,7 @@ class HttpAlt extends ChangeNotifier {
       );
       await Future.delayed(const Duration(seconds: 2));
       _hideProgress(showProgress);
+      logger.i('Handling Message after using mock data');
       _handleMessage(request, res);
       _handleLoginStep(request, res);
       if (onSuccess != null) onSuccess(res);
@@ -262,12 +254,14 @@ class HttpAlt extends ChangeNotifier {
 
     String? fingerprint = ApexApiDb.getFingerprint();
     if (fingerprint == null) {
+      logger.e('Could not create a valid fingerprint for the user : action (${request.action})');
       return BaseResponse(error: UnauthorisedException('Could not find user\'s fingerprint!'));
     }
 
     final imei = ApexApiDb.getImei();
     final imsi = ApexApiDb.getImsi();
     final additional = ApexApiDb.getAdditional();
+
     request.addParams({
       if ([1001, 1002, 1003, 1004].contains(request.action)) ...{
         'additional': {
@@ -427,6 +421,9 @@ class HttpAlt extends ChangeNotifier {
       if (res != null) {
         _handleMessage(request, res);
         _handleLoginStep(request, res);
+      } else {
+        _handleMessage(
+            request, BaseResponse<T>(error: exception, errorMessage: exception?.message));
       }
     }
 
@@ -592,6 +589,9 @@ class HttpAlt extends ChangeNotifier {
       if (res != null) {
         _handleMessage(request, res);
         _handleLoginStep(request, res);
+      } else {
+        _handleMessage(
+            request, BaseResponse<T>(error: exception, errorMessage: exception?.message));
       }
     }
 
@@ -890,7 +890,9 @@ class HttpAlt extends ChangeNotifier {
   }
 
   void _handleLoginStep(Request request, BaseResponse res) {
-    if (res.success < 0 && ![1001, 1002, 1003, 1004].contains(request.action)) {
+    if (res.success != null &&
+        res.success! < 0 &&
+        ![1001, 1002, 1003, 1004].contains(request.action)) {
       if (loginStepHandler != null) {
         loginStepHandler!(res.loginStep);
       }

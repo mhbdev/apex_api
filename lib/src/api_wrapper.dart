@@ -74,7 +74,6 @@ class _ApiWrapperBuilder extends StatefulWidget {
   final ApiConfig config;
 
   const _ApiWrapperBuilder({
-    super.key,
     required this.child,
     this.checkHostsInBackground = true,
     this.progressWidget,
@@ -133,7 +132,7 @@ class _ApiWrapperBuilderState extends State<_ApiWrapperBuilder> with WidgetLoadM
         showProgress: false,
         showRetry: false,
         ignoreExpireTime: true,
-        requestTimeout: const Duration(seconds: 10),
+        requestTimeout: const Duration(seconds: 20),
       )
           .then((response) {
         if (response.data != null && response.success == 1) {

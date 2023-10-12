@@ -2,7 +2,6 @@ import 'dart:async';
 
 import 'package:apex_api/apex_api.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/scheduler.dart';
 
 class ReactiveResponse<DM extends DataModel> {
   final ReactiveState state;
@@ -170,70 +169,76 @@ class _ReactiveWidgetState<DM extends DataModel> extends State<ReactiveWidget<DM
     /// It was necessary because some frames and states were being passed
     mountedSetState();
     Completer<BaseResponse<DM>> completer = Completer<BaseResponse<DM>>();
-    SchedulerBinding.instance.addPostFrameCallback((timeStamp) {
-      context.http.post<DM>(
-        widget.request,
-        response: widget.response,
-        onStart: () {
-          if (widget.listener != null) {
-            widget.listener!(ReactiveState.loading, _sendRequest);
+
+    /// TODO : the line below formerly was SchedulerBinding.addPostFrameCallback, so we need to test this new update
+    WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
+      if (mounted) {
+        context.http.post<DM>(
+          widget.request,
+          response: widget.response,
+          onStart: () {
+            if (widget.listener != null) {
+              widget.listener!(ReactiveState.loading, _sendRequest);
+            }
+            if (silent != true) {
+              if (!_controller.isClosed) {
+                _controller.add(ReactiveResponse(ReactiveState.loading));
+              }
+            }
+          },
+          showRetry: false,
+          showProgress: false,
+          ignoreExpireTime: widget.ignoreExpireTime,
+        ).then((response) {
+          if (widget.storeResponses) {
+            if (_storedRequests[widget.request] != null) {
+              response = _storedRequests[widget.request]!;
+            }
+            _storedRequests[widget.request] = response;
           }
-          if (silent != true) {
+
+          if (response.hasError) {
+            completer.completeError(response.error!);
+            final reactiveError = ReactiveError(
+              response.error!,
+              response.errorMessage ?? response.error.toString(),
+            );
+            if (widget.listener != null) {
+              widget.listener!(ReactiveState.error, _sendRequest, error: reactiveError);
+            }
+            if (silent != true) {
+              if (!_controller.isClosed) {
+                _controller.addError(reactiveError);
+              }
+            }
+            return;
+          }
+
+          completer.complete(response);
+
+          if (response.isSuccessful) {
+            if (widget.listener != null) {
+              widget.listener!(ReactiveState.success, _sendRequest, response: response);
+            }
+            // if (silent != true) {
             if (!_controller.isClosed) {
-              _controller.add(ReactiveResponse(ReactiveState.loading));
+              _controller.add(ReactiveResponse(ReactiveState.success, response: response));
+            }
+            // }
+          } else {
+            if (widget.listener != null) {
+              widget.listener!(ReactiveState.failure, _sendRequest, response: response);
+            }
+            if (silent != true) {
+              if (!_controller.isClosed) {
+                _controller.add(ReactiveResponse(ReactiveState.failure, response: response));
+              }
             }
           }
-        },
-        showRetry: false,
-        showProgress: false,
-        ignoreExpireTime: widget.ignoreExpireTime,
-      ).then((response) {
-        if (widget.storeResponses) {
-          if (_storedRequests[widget.request] != null) {
-            response = _storedRequests[widget.request]!;
-          }
-          _storedRequests[widget.request] = response;
-        }
-
-        if (response.hasError) {
-          completer.completeError(response.error!);
-          final reactiveError = ReactiveError(
-            response.error!,
-            response.errorMessage ?? response.error.toString(),
-          );
-          if (widget.listener != null) {
-            widget.listener!(ReactiveState.error, _sendRequest, error: reactiveError);
-          }
-          if (silent != true) {
-            if (!_controller.isClosed) {
-              _controller.addError(reactiveError);
-            }
-          }
-          return;
-        }
-
-        completer.complete(response);
-
-        if (response.isSuccessful) {
-          if (widget.listener != null) {
-            widget.listener!(ReactiveState.success, _sendRequest, response: response);
-          }
-          // if (silent != true) {
-          if (!_controller.isClosed) {
-            _controller.add(ReactiveResponse(ReactiveState.success, response: response));
-          }
-          // }
-        } else {
-          if (widget.listener != null) {
-            widget.listener!(ReactiveState.failure, _sendRequest, response: response);
-          }
-          if (silent != true) {
-            if (!_controller.isClosed) {
-              _controller.add(ReactiveResponse(ReactiveState.failure, response: response));
-            }
-          }
-        }
-      });
+        });
+      } else {
+        debugPrint('The state is not mounted');
+      }
     });
     return completer.future;
   }

@@ -53,8 +53,10 @@ iSmkf58aI1ZIkB5e9a0mCDa/0eDFm0bHEFHU9XbyZ8qjyphevWMb7vQAQbcYzZTP
               context: navKey.currentContext!,
               useRootNavigator: true,
               builder: (context) => AlertDialog(
-                  title: Text(request.action.toString()),
-                  content: Text('${v.success.toString()} ${request.isPrivate}')),
+                title: Text(request.action.toString()),
+                content: Text(
+                    'SUCCESS: ${v.success.toString()}\nIs Private: ${request.isPrivate}\nMessage: ${v.message}'),
+              ),
             );
           },
           child: child!,
@@ -79,12 +81,6 @@ class MyHomePage extends StatefulWidget {
 class _MyHomePageState extends State<MyHomePage> {
   int _counter = 0;
 
-  void _incrementCounter() {
-    setState(() {
-      _counter++;
-    });
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -108,6 +104,7 @@ class _MyHomePageState extends State<MyHomePage> {
             SimpleRequest(5, isPublic: true),
             response: FetchProvinces.fromJson,
           );
+          debugPrint(res.message);
         },
         child: const Icon(Icons.add),
       ),
