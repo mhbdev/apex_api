@@ -122,9 +122,8 @@ abstract class Request extends Equatable {
   }) {
     try {
       return context.http
-          .post<T>(this,
+          .post<T>(ApiAction<T>(this, response: response),
               showProgress: showProgress,
-              response: response,
               languageCode: languageCode,
               showRetry: showRetry,
               onStart: onStart,

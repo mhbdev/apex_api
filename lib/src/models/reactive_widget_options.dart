@@ -8,10 +8,12 @@ class ReactiveWidgetOptions {
   final Widget Function(ServerException exception, Object error,
       Future<BaseResponse> Function([bool? silent]) onRetry) retryWidget;
   final Widget loadingWidget;
+  final int retryAttempts;
 
   ReactiveWidgetOptions({
     required this.failureWidget,
     required this.retryWidget,
     required this.loadingWidget,
+    this.retryAttempts = 0,
   });
 }

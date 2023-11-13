@@ -41,7 +41,8 @@ class ReactiveController<DM extends DataModel> {
 }
 
 class ReactiveWidget<DM extends DataModel> extends StatefulWidget {
-  final Request request;
+  final ApiAction<DM>? action;
+  final Request? request;
   final Widget? loadingWidget;
   final Widget Function(
           BaseResponse<DM> response, Future<BaseResponse<DM>> Function([bool? silent]) onRetry)
@@ -61,6 +62,8 @@ class ReactiveWidget<DM extends DataModel> extends StatefulWidget {
       {BaseResponse<DM>? response})? wrapper;
   final DM Function(Json json)? response;
 
+  final int retryAttempts;
+
   /// Set this parameter to `true` if you need to save different responses of the same request (action)
   /// Can be used for actions with pagination feature
   final bool storeResponses;
@@ -68,7 +71,9 @@ class ReactiveWidget<DM extends DataModel> extends StatefulWidget {
 
   const ReactiveWidget({
     Key? key,
-    required this.request,
+    this.retryAttempts = 0,
+    this.action,
+    this.request,
     this.loadingWidget,
     required this.successWidget,
     this.failureWidget,
@@ -80,7 +85,9 @@ class ReactiveWidget<DM extends DataModel> extends StatefulWidget {
     this.wrapper,
     this.storeResponses = false,
     this.streamController,
-  }) : super(key: key);
+  })  : assert(action != null || request != null,
+            "One of the arguments `action` or `request` should be passed!"),
+        super(key: key);
 
   @override
   State<ReactiveWidget> createState() => _ReactiveWidgetState<DM>();
@@ -92,6 +99,8 @@ class _ReactiveWidgetState<DM extends DataModel> extends State<ReactiveWidget<DM
 
   Map<Request, BaseResponse<DM>> _storedRequests = {};
 
+  int _attempts = 0;
+
   @override
   void initState() {
     _controller = widget.streamController ?? StreamController<ReactiveResponse<DM>>();
@@ -101,6 +110,7 @@ class _ReactiveWidgetState<DM extends DataModel> extends State<ReactiveWidget<DM
 
   @override
   void dispose() {
+    _attempts = 0;
     _storedRequests.clear();
     if (widget.controller != null) {
       widget.controller!.removeListener();
@@ -166,6 +176,8 @@ class _ReactiveWidgetState<DM extends DataModel> extends State<ReactiveWidget<DM
   }
 
   Future<BaseResponse<DM>> _sendRequest([bool? silent]) {
+    _attempts += 1;
+
     /// It was necessary because some frames and states were being passed
     mountedSetState();
     Completer<BaseResponse<DM>> completer = Completer<BaseResponse<DM>>();
@@ -174,8 +186,7 @@ class _ReactiveWidgetState<DM extends DataModel> extends State<ReactiveWidget<DM
     WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
       if (mounted) {
         context.http.post<DM>(
-          widget.request,
-          response: widget.response,
+          widget.action ?? ApiAction(widget.request!, response: widget.response),
           onStart: () {
             if (widget.listener != null) {
               widget.listener!(ReactiveState.loading, _sendRequest);
@@ -191,10 +202,10 @@ class _ReactiveWidgetState<DM extends DataModel> extends State<ReactiveWidget<DM
           ignoreExpireTime: widget.ignoreExpireTime,
         ).then((response) {
           if (widget.storeResponses) {
-            if (_storedRequests[widget.request] != null) {
-              response = _storedRequests[widget.request]!;
+            if (_storedRequests[widget.action] != null) {
+              response = _storedRequests[widget.action]!;
             }
-            _storedRequests[widget.request] = response;
+            _storedRequests[widget.action?.request ?? widget.request!] = response;
           }
 
           if (response.hasError) {
@@ -205,6 +216,7 @@ class _ReactiveWidgetState<DM extends DataModel> extends State<ReactiveWidget<DM
             );
             if (widget.listener != null) {
               widget.listener!(ReactiveState.error, _sendRequest, error: reactiveError);
+              _retry(silent);
             }
             if (silent != true) {
               if (!_controller.isClosed) {
@@ -219,22 +231,28 @@ class _ReactiveWidgetState<DM extends DataModel> extends State<ReactiveWidget<DM
           if (response.isSuccessful) {
             if (widget.listener != null) {
               widget.listener!(ReactiveState.success, _sendRequest, response: response);
+              _attempts = 0;
             }
             // if (silent != true) {
             if (!_controller.isClosed) {
               _controller.add(ReactiveResponse(ReactiveState.success, response: response));
+              _attempts = 0;
             }
             // }
           } else {
             if (widget.listener != null) {
               widget.listener!(ReactiveState.failure, _sendRequest, response: response);
+              _retry(silent);
             }
             if (silent != true) {
               if (!_controller.isClosed) {
                 _controller.add(ReactiveResponse(ReactiveState.failure, response: response));
+                _retry(silent);
               }
             }
           }
+        }).catchError((e) {
+          _retry(silent);
         });
       } else {
         debugPrint('The state is not mounted');
@@ -249,5 +267,12 @@ class _ReactiveWidgetState<DM extends DataModel> extends State<ReactiveWidget<DM
   @override
   void onLoad(BuildContext context) {
     if (widget.controller != null) widget.controller!.setListener(_sendRequest);
+  }
+
+  void _retry([bool? silent]) {
+    if (_attempts <
+        (context.http.config.reactiveWidgetOptions?.retryAttempts ?? widget.retryAttempts)) {
+      _sendRequest(silent);
+    }
   }
 }

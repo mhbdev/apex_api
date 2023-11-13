@@ -15,6 +15,7 @@ import 'package:socket_io_client/socket_io_client.dart' as io;
 
 import '../../../cipher/crypto.dart';
 import '../../exceptions/exceptions.dart';
+import '../../models/api_action.dart';
 import '../../models/connection_config.dart';
 import '../../models/default_requests/city_province.dart';
 import '../../models/default_requests/upload.dart';
@@ -183,8 +184,7 @@ class HttpAlt extends ChangeNotifier {
   }
 
   Future<BaseResponse<T>> post<T extends DataModel>(
-    Request request, {
-    T Function(Json json)? response,
+    ApiAction<T> action, {
     VoidCallback? onStart,
     ValueChanged<BaseResponse<T>>? onSuccess,
     String? languageCode,
@@ -196,8 +196,13 @@ class HttpAlt extends ChangeNotifier {
     Duration? requestTimeout,
     CancellationToken? cancellationToken,
   }) async {
-    assert(languageCode == null || languageCode.length == 2);
-    assert(response != null || responseModels?.containsKey(T) == true);
+    assert(languageCode == null || languageCode.length == 2,
+        'Language must me a 2 character symbol like FA or EN');
+    assert(action.response != null || responseModels?.containsKey(T) == true,
+        "No response parser available");
+
+    final request = action.request;
+    final response = action.response ?? responseModels?[T];
 
     if (client != null) {
       if (client is IOClient) {
@@ -208,8 +213,7 @@ class HttpAlt extends ChangeNotifier {
     }
 
     Future<BaseResponse<T>> retryClosure() => post<T>(
-          request,
-          response: response,
+          action,
           languageCode: languageCode,
           ignoreExpireTime: ignoreExpireTime,
           showRetry: showRetry,
@@ -237,11 +241,7 @@ class HttpAlt extends ChangeNotifier {
     } else {
       final res = BaseResponse<T>(
         data: await request.responseMock,
-        model: response != null
-            ? response(await request.responseMock)
-            : (responseModels != null && responseModels!.containsKey(T)
-                ? responseModels![T]!(await request.responseMock) as T
-                : null),
+        model: response!(await request.responseMock) as T,
       );
       await Future.delayed(const Duration(seconds: 2));
       _hideProgress(showProgress);
@@ -296,11 +296,7 @@ class HttpAlt extends ChangeNotifier {
             // We can use local storage saved data
             final res = BaseResponse<T>(
               data: result,
-              model: response != null
-                  ? response(result ?? {'success': -1})
-                  : (responseModels != null && responseModels!.containsKey(T)
-                      ? responseModels![T]!(result ?? {'success': -1}) as T
-                      : null),
+              model: response!(result ?? {'success': -1}) as T,
             );
             if (onSuccess != null) onSuccess(res);
             return res;
@@ -377,11 +373,7 @@ class HttpAlt extends ChangeNotifier {
         final decodedResponse = jsonDecode(responseMessage);
         res = BaseResponse<T>(
           data: decodedResponse,
-          model: response != null
-              ? response(decodedResponse)
-              : (responseModels != null && responseModels!.containsKey(T)
-                  ? responseModels![T]!(decodedResponse) as T
-                  : null),
+          model: response!(decodedResponse) as T,
         );
 
         // Save response to storage if it has save_local_duration parameter

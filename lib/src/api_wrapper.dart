@@ -123,12 +123,12 @@ class _ApiWrapperBuilderState extends State<_ApiWrapperBuilder> with WidgetLoadM
     if (widget.config.hostCheck) {
       context.http
           .post(
-        SimpleRequest(
+        ApiAction(SimpleRequest(
           666,
           isPublic: true,
           needCredentials: false,
           customUrl: widget.config.host,
-        ),
+        )),
         showProgress: false,
         showRetry: false,
         ignoreExpireTime: true,
