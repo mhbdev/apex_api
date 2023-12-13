@@ -4,4 +4,6 @@ import 'package:provider/provider.dart';
 
 extension ServerWidgetExtension on BuildContext {
   HttpAlt get http => Provider.of<HttpAlt>(this, listen: false);
+
+  HttpAlt get api => Provider.of<HttpAlt>(this, listen: false);
 }

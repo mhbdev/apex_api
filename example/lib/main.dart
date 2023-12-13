@@ -79,7 +79,7 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  int _counter = 0;
+  final int _counter = 0;
 
   @override
   Widget build(BuildContext context) {
@@ -101,8 +101,7 @@ class _MyHomePageState extends State<MyHomePage> {
       floatingActionButton: FloatingActionButton(
         onPressed: () async {
           final res = await context.http.post(
-            SimpleRequest(5, isPublic: true),
-            response: FetchProvinces.fromJson,
+            ApiAction(SimpleRequest(5, isPublic: true), response: FetchProvinces.fromJson),
           );
           debugPrint(res.message);
         },
