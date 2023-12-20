@@ -2,6 +2,7 @@ import 'package:apex_api/apex_api.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+@Deprecated("Use [ApexApiWrapper] instead")
 class ApiWrapper extends StatelessWidget {
   final ApiConfig config;
   final Widget child;
@@ -50,11 +51,11 @@ class ApiWrapper extends StatelessWidget {
       ],
       child: config.hostCheck
           ? _ApiWrapperBuilder(
-              config: config,
-              checkHostsInBackground: checkHostsInBackground,
-              progressWidget: progressWidget,
-              child: child,
-            )
+        config: config,
+        checkHostsInBackground: checkHostsInBackground,
+        progressWidget: progressWidget,
+        child: child,
+      )
           : child,
     );
   }
@@ -121,15 +122,15 @@ class _ApiWrapperBuilderState extends State<_ApiWrapperBuilder> with WidgetLoadM
   @override
   void onLoad(BuildContext context) {
     if (widget.config.hostCheck) {
-      context.http
-          .post(
+      context.connection
+          .send(
         ApiAction(SimpleRequest(
           666,
           isPublic: true,
           needCredentials: false,
           customUrl: widget.config.host,
         )),
-        showProgress: false,
+        showLoading: false,
         showRetry: false,
         ignoreExpireTime: true,
         requestTimeout: const Duration(seconds: 20),

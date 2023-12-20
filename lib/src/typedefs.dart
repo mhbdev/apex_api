@@ -7,7 +7,7 @@ import 'package:flutter/material.dart';
 
 import 'models/response.dart';
 
-typedef ResType = DataModel Function(Json m);
+typedef ResType<T extends DataModel> = T Function(Json m);
 
 typedef ReqType = Request Function(Json m);
 
@@ -28,3 +28,7 @@ typedef OnSuccess<DM extends DataModel> = void Function(BaseResponse<DM> respons
 
 typedef RetryBuilder = Widget Function(
     BuildContext context, void Function<DM extends DataModel>() onRetry, VoidCallback close);
+
+typedef OnLoginStepChanged = ValueChanged<LoginStep>;
+typedef OnMessage = Future<bool> Function(Request request, BaseResponse response);
+typedef OnRetry = void Function(VoidCallback retry);

@@ -19,6 +19,7 @@ export 'package:equatable/equatable.dart';
 export 'package:socket_io_client/socket_io_client.dart';
 
 export 'src/api_wrapper.dart';
+export 'src/apex_api_wrapper.dart';
 export 'src/clients/http/http_alt.dart';
 export 'src/exceptions/exceptions.dart';
 export 'src/extensions/context_extensions.dart';

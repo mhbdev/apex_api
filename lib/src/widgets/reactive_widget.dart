@@ -122,6 +122,27 @@ class _ReactiveWidgetState<DM extends DataModel> extends State<ReactiveWidget<DM
   }
 
   @override
+  void didUpdateWidget(covariant ReactiveWidget<DM> oldWidget) {
+    if (oldWidget.controller != widget.controller) {
+      mountedSetState();
+    }
+
+    if (widget.controller != null && !widget.controller!.hasClient) {
+      widget.controller!.setListener(_sendRequest);
+    }
+
+    super.didUpdateWidget(oldWidget);
+  }
+
+  @override
+  void didChangeDependencies() {
+    if (widget.controller != null && !widget.controller!.hasClient) {
+      widget.controller!.setListener(_sendRequest);
+    }
+    super.didChangeDependencies();
+  }
+
+  @override
   Widget build(BuildContext context) {
     super.build(context);
     return StreamBuilder<ReactiveResponse<DM>>(
@@ -132,13 +153,14 @@ class _ReactiveWidgetState<DM extends DataModel> extends State<ReactiveWidget<DM
             final data = snapshot.data!;
             if (data.state == ReactiveState.loading) {
               return widget.loadingWidget ??
-                  context.http.config.reactiveWidgetOptions?.loadingWidget ??
+                  context.connection.config.reactiveWidgetOptions?.loadingWidget ??
                   const Center(
                     child: CircularProgressIndicator(),
                   );
             } else if (data.state == ReactiveState.failure) {
               return Function.apply(
-                  widget.failureWidget ?? context.http.config.reactiveWidgetOptions!.failureWidget,
+                  widget.failureWidget ??
+                      context.connection.config.reactiveWidgetOptions!.failureWidget,
                   [data.response!, _sendRequest]);
             } else if (data.state == ReactiveState.success) {
               return widget.successWidget(data.response!, _sendRequest);
@@ -146,12 +168,12 @@ class _ReactiveWidgetState<DM extends DataModel> extends State<ReactiveWidget<DM
           } else if (snapshot.hasError && snapshot.error != null) {
             final error = snapshot.error! as ReactiveError;
             return Function.apply(
-                widget.retryWidget ?? context.http.config.reactiveWidgetOptions!.retryWidget,
+                widget.retryWidget ?? context.connection.config.reactiveWidgetOptions!.retryWidget,
                 [error.exception, error.error, _sendRequest]);
           }
 
           return widget.loadingWidget ??
-              context.http.config.reactiveWidgetOptions?.loadingWidget ??
+              context.connection.config.reactiveWidgetOptions?.loadingWidget ??
               const Center(
                 child: CircularProgressIndicator(),
               );
@@ -180,12 +202,13 @@ class _ReactiveWidgetState<DM extends DataModel> extends State<ReactiveWidget<DM
 
     /// It was necessary because some frames and states were being passed
     mountedSetState();
+
     Completer<BaseResponse<DM>> completer = Completer<BaseResponse<DM>>();
 
     /// TODO : the line below formerly was SchedulerBinding.addPostFrameCallback, so we need to test this new update
     WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
       if (mounted) {
-        context.http.post<DM>(
+        context.connection.send<DM>(
           widget.action ?? ApiAction(widget.request!, response: widget.response),
           onStart: () {
             if (widget.listener != null) {
@@ -198,7 +221,7 @@ class _ReactiveWidgetState<DM extends DataModel> extends State<ReactiveWidget<DM
             }
           },
           showRetry: false,
-          showProgress: false,
+          showLoading: false,
           ignoreExpireTime: widget.ignoreExpireTime,
         ).then((response) {
           if (widget.storeResponses) {
@@ -266,12 +289,14 @@ class _ReactiveWidgetState<DM extends DataModel> extends State<ReactiveWidget<DM
 
   @override
   void onLoad(BuildContext context) {
-    if (widget.controller != null) widget.controller!.setListener(_sendRequest);
+    if (widget.controller != null) {
+      widget.controller!.setListener(_sendRequest);
+    }
   }
 
   void _retry([bool? silent]) {
     if (_attempts <
-        (context.http.config.reactiveWidgetOptions?.retryAttempts ?? widget.retryAttempts)) {
+        (context.connection.config.reactiveWidgetOptions?.retryAttempts ?? widget.retryAttempts)) {
       _sendRequest(silent);
     }
   }

@@ -30,6 +30,7 @@ import 'browser_client.dart' if (dart.library.html) 'package:http/browser_client
 
 enum ConnectionStatus { reconnecting, connecting, connected, error, destroyed, timeout }
 
+@Deprecated("replace this with [HttpConnection] class")
 class HttpAlt extends ChangeNotifier {
   late io.Socket socket;
   http.Client? client;
@@ -55,8 +56,7 @@ class HttpAlt extends ChangeNotifier {
   Timer? timer;
   ConnectionStatus status = ConnectionStatus.connecting;
 
-  HttpAlt(
-    this.config, {
+  HttpAlt(this.config, {
     this.retryBuilder,
     this.progressWidget,
     this.messageHandler,
@@ -67,7 +67,7 @@ class HttpAlt extends ChangeNotifier {
     Map<Type, ResType>? responseModels,
   })  : assert(Uri.parse(config.host).isAbsolute, '${config.host} must be a valid url.'),
         assert(config.port == null || (config.port! >= -1 && config.port! <= 65535),
-            '${config.port} must be a number between -1 and 65535. or null.'),
+        '${config.port} must be a number between -1 and 65535. or null.'),
         responseModels = {
           FetchCountries: FetchCountries.fromJson,
           FetchProvinces: FetchProvinces.fromJson,
@@ -183,8 +183,7 @@ class HttpAlt extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<BaseResponse<T>> post<T extends DataModel>(
-    ApiAction<T> action, {
+  Future<BaseResponse<T>> post<T extends DataModel>(ApiAction<T> action, {
     VoidCallback? onStart,
     ValueChanged<BaseResponse<T>>? onSuccess,
     String? languageCode,
@@ -197,9 +196,9 @@ class HttpAlt extends ChangeNotifier {
     CancellationToken? cancellationToken,
   }) async {
     assert(languageCode == null || languageCode.length == 2,
-        'Language must me a 2 character symbol like FA or EN');
+    'Language must me a 2 character symbol like FA or EN');
     assert(action.response != null || responseModels?.containsKey(T) == true,
-        "No response parser available");
+    "No response parser available");
 
     final request = action.request;
     final response = action.response ?? responseModels?[T];
@@ -213,18 +212,18 @@ class HttpAlt extends ChangeNotifier {
     }
 
     Future<BaseResponse<T>> retryClosure() => post<T>(
-          action,
-          languageCode: languageCode,
-          ignoreExpireTime: ignoreExpireTime,
-          showRetry: showRetry,
-          onStart: onStart,
-          headers: headers,
-          encoding: encoding,
-          onSuccess: onSuccess,
-          showProgress: showProgress,
-          requestTimeout: requestTimeout,
-          cancellationToken: cancellationToken,
-        );
+      action,
+      languageCode: languageCode,
+      ignoreExpireTime: ignoreExpireTime,
+      showRetry: showRetry,
+      onStart: onStart,
+      headers: headers,
+      encoding: encoding,
+      onSuccess: onSuccess,
+      showProgress: showProgress,
+      requestTimeout: requestTimeout,
+      cancellationToken: cancellationToken,
+    );
 
     if (onStart != null) onStart();
 
@@ -282,7 +281,7 @@ class HttpAlt extends ChangeNotifier {
     // Try to load action from storage if action has been saved and not expired
     final storageKey = md5
         .convert(utf8.encode(
-            'R_${request.storageUniqueKey != null ? request.storageUniqueKey! : ''}${config.dbVersion}_${request.action}${ApexApiDb.isAuthenticated && !request.isPublic ? (ApexApiDb.getToken() ?? 'pr') : 'pu'}'))
+        'R_${request.storageUniqueKey != null ? request.storageUniqueKey! : ''}${config.dbVersion}_${request.action}${ApexApiDb.isAuthenticated && !request.isPublic ? (ApexApiDb.getToken() ?? 'pr') : 'pu'}'))
         .toString();
     if (!ignoreExpireTime) {
       final storage = StorageUtil.getString(storageKey);
@@ -335,27 +334,27 @@ class HttpAlt extends ChangeNotifier {
 
       http.Response httpResponse = await (client != null
           ? client!
-              .post(
-                Uri.parse(url),
-                headers: headers,
-                body: config.enableGzip
-                    ? gzip.encode(requestBody.codeUnits)
-                    : {'request': requestBody},
-                encoding: encoding ?? Encoding.getByName('utf-8'),
-              )
-              .timeout(requestTimeout ?? config.requestTimeout, onTimeout: config.onTimeout)
-              .asCancellable(cancellationToken)
+          .post(
+        Uri.parse(url),
+        headers: headers,
+        body: config.enableGzip
+            ? gzip.encode(requestBody.codeUnits)
+            : {'request': requestBody},
+        encoding: encoding ?? Encoding.getByName('utf-8'),
+      )
+          .timeout(requestTimeout ?? config.requestTimeout, onTimeout: config.onTimeout)
+          .asCancellable(cancellationToken)
           : http
-              .post(
-                Uri.parse(url),
-                headers: headers,
-                body: config.enableGzip
-                    ? gzip.encode(requestBody.codeUnits)
-                    : {'request': requestBody},
-                encoding: encoding ?? Encoding.getByName('utf-8'),
-              )
-              .timeout(requestTimeout ?? config.requestTimeout, onTimeout: config.onTimeout)
-              .asCancellable(cancellationToken));
+          .post(
+        Uri.parse(url),
+        headers: headers,
+        body: config.enableGzip
+            ? gzip.encode(requestBody.codeUnits)
+            : {'request': requestBody},
+        encoding: encoding ?? Encoding.getByName('utf-8'),
+      )
+          .timeout(requestTimeout ?? config.requestTimeout, onTimeout: config.onTimeout)
+          .asCancellable(cancellationToken));
 
       if (httpResponse.statusCode == 200) {
         String responseMessage;
@@ -423,8 +422,7 @@ class HttpAlt extends ChangeNotifier {
         BaseResponse<T>(error: exception, errorMessage: exception.message));
   }
 
-  Future<BaseResponse<T>> emit<T extends DataModel>(
-    Request request, {
+  Future<BaseResponse<T>> emit<T extends DataModel>(Request request, {
     T Function(Json json)? response,
     VoidCallback? onStart,
     ValueChanged<BaseResponse<T>>? onSuccess,
@@ -471,8 +469,8 @@ class HttpAlt extends ChangeNotifier {
         model: response != null
             ? response(await request.responseMock)
             : (responseModels != null && responseModels!.containsKey(T)
-                ? responseModels![T]!(await request.responseMock) as T
-                : null),
+            ? responseModels![T]!(await request.responseMock) as T
+            : null),
       );
       _hideProgress(showProgress);
       _handleMessage(request, res);
@@ -510,7 +508,7 @@ class HttpAlt extends ChangeNotifier {
     // Try to load action from storage if action has been saved and not expired
     final storageKey = md5
         .convert(utf8.encode(
-            'R_${request.storageUniqueKey != null ? request.storageUniqueKey! : ''}${config.dbVersion}_${request.action}${ApexApiDb.isAuthenticated && !request.isPublic ? (ApexApiDb.getToken() ?? 'pr') : 'pu'}'))
+        'R_${request.storageUniqueKey != null ? request.storageUniqueKey! : ''}${config.dbVersion}_${request.action}${ApexApiDb.isAuthenticated && !request.isPublic ? (ApexApiDb.getToken() ?? 'pr') : 'pu'}'))
         .toString();
     if (!ignoreExpireTime) {
       final storage = StorageUtil.getString(storageKey);
@@ -527,8 +525,8 @@ class HttpAlt extends ChangeNotifier {
               model: response != null
                   ? response(result ?? {'success': -1})
                   : (responseModels != null && responseModels!.containsKey(T)
-                      ? responseModels![T]!(result ?? {'success': -1}) as T
-                      : null),
+                  ? responseModels![T]!(result ?? {'success': -1}) as T
+                  : null),
             );
             if (onSuccess != null) onSuccess(res);
             logger.i(res.toString());
@@ -622,8 +620,7 @@ class HttpAlt extends ChangeNotifier {
     return completer.future;
   }
 
-  Future<bool> join<DM extends DataModel>(
-    JoinGroupRequest joinRequest, {
+  Future<bool> join<DM extends DataModel>(JoinGroupRequest joinRequest, {
     VoidCallback? onStart,
     StreamSocket<BaseResponse<DM>>? stream,
     SocketJoinController<BaseResponse<DM>>? controller,
@@ -677,8 +674,7 @@ class HttpAlt extends ChangeNotifier {
     }
   }
 
-  Future<BaseResponse<T>> uploadFile<T extends DataModel>(
-    Request request, {
+  Future<BaseResponse<T>> uploadFile<T extends DataModel>(Request request, {
     String? fileName,
     String fileKey = 'file',
     String? filePath,
@@ -697,27 +693,27 @@ class HttpAlt extends ChangeNotifier {
   }) async {
     assert(languageCode == null || languageCode.length == 2);
     assert(response != null || responseModels?.containsKey(T) == true,
-        'Provide a [response] or add your response parser to [responseModels] in ApiWrapper');
+    'Provide a [response] or add your response parser to [responseModels] in ApiWrapper');
     if (onStart != null) onStart();
 
     Future<BaseResponse<T>> retryClosure() => uploadFile<T>(
-          request,
-          response: response,
-          languageCode: languageCode,
-          ignoreExpireTime: ignoreExpireTime,
-          showRetry: showRetry,
-          onStart: onStart,
-          headers: headers,
-          encoding: encoding,
-          onSuccess: onSuccess,
-          showProgress: showProgress,
-          filePath: filePath,
-          fileName: fileName,
-          blobData: blobData,
-          onProgress: onProgress,
-          cancelToken: cancelToken,
-          fileKey: fileKey,
-        );
+      request,
+      response: response,
+      languageCode: languageCode,
+      ignoreExpireTime: ignoreExpireTime,
+      showRetry: showRetry,
+      onStart: onStart,
+      headers: headers,
+      encoding: encoding,
+      onSuccess: onSuccess,
+      showProgress: showProgress,
+      filePath: filePath,
+      fileName: fileName,
+      blobData: blobData,
+      onProgress: onProgress,
+      cancelToken: cancelToken,
+      fileKey: fileKey,
+    );
 
     _showProgress(showProgress);
 
@@ -749,7 +745,7 @@ class HttpAlt extends ChangeNotifier {
     var req = FileRequest(
       request.method.name,
       Uri.parse(request.handlerUrl ?? (currentHost ?? config.host)),
-      (bytes, totalBytes) {
+          (bytes, totalBytes) {
         if (onProgress != null) onProgress(bytes / totalBytes);
       },
       config.connectionTimeout,
@@ -936,8 +932,8 @@ class HttpAlt extends ChangeNotifier {
           model: response != null
               ? response(decodedResponse)
               : (responseModels != null && responseModels!.containsKey(T)
-                  ? responseModels![T]!(decodedResponse) as T
-                  : null),
+              ? responseModels![T]!(decodedResponse) as T
+              : null),
         );
 
         // Save response to storage if it has save_local_duration parameter

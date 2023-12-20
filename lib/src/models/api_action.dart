@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 
 class ApiAction<T extends DataModel> {
   final Request request;
-  final T Function(Json json)? response;
+  final ResType<T>? response;
 
   ApiAction(this.request, {this.response});
 }
