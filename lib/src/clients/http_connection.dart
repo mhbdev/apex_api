@@ -251,19 +251,23 @@ class HttpConnection extends BaseConnection {
         exception = ServerErrorException('Response status code is ${httpResponse.statusCode}');
       }
     } on CancelledException catch (e, stackTrace) {
-      logger.i('Cancelled using a token', e, stackTrace);
+      logger.i('Cancelled using a token', error: e, stackTrace: stackTrace);
       exception = ClientErrorException('Cancelled using a token');
     } on FormatException catch (e, stackTrace) {
-      logger.e('Could not resolve json format parsing!', e, stackTrace);
+      logger.e('Could not resolve json format parsing!',
+          error: e, stackTrace: stackTrace);
       exception = ResponseParseException();
     } on http.ClientException catch (e, stackTrace) {
-      logger.e('A ClientException has been occurred', e, stackTrace);
+      logger.e('A ClientException has been occurred',
+          error: e, stackTrace: stackTrace);
       exception = ClientErrorException();
     } on SocketException catch (e, stackTrace) {
-      logger.e('A Network Error has been thrown!', e, stackTrace);
+      logger.e('A Network Error has been thrown!',
+          error: e, stackTrace: stackTrace);
       exception = NetworkErrorException();
     } catch (e, stackTrace) {
-      logger.e('Something happened during sending http post request!', e, stackTrace);
+      logger.e('Something happened during sending http post request!',
+          error: e, stackTrace: stackTrace);
       exception = ServerErrorException();
     } finally {
       if (showLoading) {

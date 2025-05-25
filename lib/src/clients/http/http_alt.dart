@@ -393,19 +393,23 @@ class HttpAlt extends ChangeNotifier {
         exception = ServerErrorException('Response status code is ${httpResponse.statusCode}');
       }
     } on CancelledException catch (e, stackTrace) {
-      logger.i('Cancelled using a token', e, stackTrace);
+      logger.i('Cancelled using a token', error: e, stackTrace: stackTrace);
       exception = ClientErrorException('Cancelled using a token');
     } on FormatException catch (e, stackTrace) {
-      logger.e('Could not resolve json format parsing!', e, stackTrace);
+      logger.e('Could not resolve json format parsing!',
+          error: e, stackTrace: stackTrace);
       exception = ResponseParseException();
     } on http.ClientException catch (e, stackTrace) {
-      logger.e('A ClientException has been occurred', e, stackTrace);
+      logger.e('A ClientException has been occurred',
+          error: e, stackTrace: stackTrace);
       exception = ClientErrorException();
     } on SocketException catch (e, stackTrace) {
-      logger.e('A Network Error has been thrown!', e, stackTrace);
+      logger.e('A Network Error has been thrown!',
+          error: e, stackTrace: stackTrace);
       exception = NetworkErrorException();
     } catch (e, stackTrace) {
-      logger.e('Something happened during sending http post request!', e, stackTrace);
+      logger.e('Something happened during sending http post request!',
+          error: e, stackTrace: stackTrace);
       exception = ServerErrorException();
     } finally {
       _hideProgress(showProgress);
@@ -563,16 +567,20 @@ class HttpAlt extends ChangeNotifier {
       res = await emitWithFutureAck<T>(
           crypto, request, requestBody, response, storageKey, onSuccess, onError, showProgress);
     } on FormatException catch (e, stackTrace) {
-      logger.e('Could not resolve json format parsing!', e, stackTrace);
+      logger.e('Could not resolve json format parsing!',
+          error: e, stackTrace: stackTrace);
       exception = ResponseParseException();
     } on http.ClientException catch (e, stackTrace) {
-      logger.e('A ClientException has been occurred', e, stackTrace);
+      logger.e('A ClientException has been occurred',
+          error: e, stackTrace: stackTrace);
       exception = ClientErrorException();
     } on SocketException catch (e, stackTrace) {
-      logger.e('A Network Error has been thrown!', e, stackTrace);
+      logger.e('A Network Error has been thrown!',
+          error: e, stackTrace: stackTrace);
       exception = NetworkErrorException();
     } catch (e, stackTrace) {
-      logger.e('Something happened during sending http post request!', e, stackTrace);
+      logger.e('Something happened during sending http post request!',
+          error: e, stackTrace: stackTrace);
       exception = ServerErrorException();
     } finally {
       _hideProgress(showProgress);
@@ -794,7 +802,7 @@ class HttpAlt extends ChangeNotifier {
           _handleMessage(request, res);
           return res;
         } on FormatException catch (e, stackTrace) {
-          logger.e('Response Parse Error!', e, stackTrace);
+          logger.e('Response Parse Error!', error: e, stackTrace: stackTrace);
           exception = ResponseParseException('Could not parse server uploadResponse! wanna retry?');
         }
       } else {
@@ -948,7 +956,7 @@ class HttpAlt extends ChangeNotifier {
         _hideProgress(showProgress);
         if (onSuccess != null) onSuccess(res);
       } on FormatException catch (e, stackTrace) {
-        logger.e('Response Parse Error!', e, stackTrace);
+        logger.e('Response Parse Error!', error: e, stackTrace: stackTrace);
         if (!completer.isCompleted) {
           completer.complete(BaseResponse(
               error: ResponseParseException('Could not parse the response: $m'),

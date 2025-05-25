@@ -23,9 +23,9 @@ dependencies:
   dartz: ^0.10.1
   device_info_plus: ^9.1.1
   universal_html: ^2.0.8
-  logger: ^1.1.0
+  logger: ^2.0.2+1
   provider: ^6.0.5
-  permission_handler: ^10.2.0
+  permission_handler: ^11.3.1
   fluttertoast: ^8.2.1
   cancellation_token: ^2.0.0
 
