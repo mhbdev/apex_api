@@ -118,7 +118,7 @@ class HttpConnection extends BaseConnection {
     final additional = ApexApiDb.getAdditional();
 
     request.addParams({
-      if ([1001, 1002, 1003, 1004].contains(request.action)) ...{
+      if (["startAuthentication", "getToken", "setNewPassword", "resetPassword"].contains(request.action)) ...{
         'additional': {
           if (imei != null) 'imei': imei,
           if (imsi != null) 'imsi': imsi,
@@ -130,7 +130,7 @@ class HttpConnection extends BaseConnection {
       'language': (languageCode ?? config.languageCode).toUpperCase(),
       if (ApexApiDb.isAuthenticated &&
           !request.containsKey('token') &&
-          ![1001, 1002, 1003, 1004].contains(request.action))
+          !["startAuthentication", "getToken", "setNewPassword", "resetPassword"].contains(request.action))
         'token': ApexApiDb.getToken(),
     });
 
@@ -292,7 +292,7 @@ class HttpConnection extends BaseConnection {
   void _handleLoginStep(Request request, BaseResponse res) {
     if (res.success != null &&
         res.success! < 0 &&
-        ![1001, 1002, 1003, 1004].contains(request.action)) {
+        !["startAuthentication", "getToken", "setNewPassword", "resetPassword"].contains(request.action)) {
       if (onLoginStepChanged != null) onLoginStepChanged!(res.loginStep);
     }
   }
@@ -303,7 +303,7 @@ class HttpConnection extends BaseConnection {
     if (show && onRetry != null) {
       onRetry!(() {
         completer.complete(retryClosure());
-      });
+      }, null);
     } else {
       completer.complete(placeholder);
     }

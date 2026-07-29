@@ -26,9 +26,17 @@ import '../../preferences/database.dart';
 import '../../preferences/storage_util.dart';
 import '../../socket_join_controller.dart';
 import '../../socket_stream.dart';
-import 'browser_client.dart' if (dart.library.html) 'package:http/browser_client.dart';
+import 'browser_client.dart'
+    if (dart.library.html) 'package:http/browser_client.dart';
 
-enum ConnectionStatus { reconnecting, connecting, connected, error, destroyed, timeout }
+enum ConnectionStatus {
+  reconnecting,
+  connecting,
+  connected,
+  error,
+  destroyed,
+  timeout
+}
 
 @Deprecated("replace this with [HttpConnection] class")
 class HttpAlt extends ChangeNotifier {
@@ -41,7 +49,9 @@ class HttpAlt extends ChangeNotifier {
   final void Function(Request request, BaseResponse response)? messageHandler;
   final Map<Type, ResType>? responseModels;
   final Widget? progressWidget;
-  final Widget Function(BuildContext context, VoidCallback onRetry)? retryBuilder;
+  final Widget Function(BuildContext context, VoidCallback onRetry)?
+      retryBuilder;
+  final OnRetry? onRetry;
   final io.OptionBuilder options;
   final bool useSocket;
 
@@ -56,8 +66,10 @@ class HttpAlt extends ChangeNotifier {
   Timer? timer;
   ConnectionStatus status = ConnectionStatus.connecting;
 
-  HttpAlt(this.config, {
+  HttpAlt(
+    this.config, {
     this.retryBuilder,
+    this.onRetry,
     this.progressWidget,
     this.messageHandler,
     this.loginStepHandler,
@@ -65,9 +77,12 @@ class HttpAlt extends ChangeNotifier {
     required this.navKey,
     http.Client? client,
     Map<Type, ResType>? responseModels,
-  })  : assert(Uri.parse(config.host).isAbsolute, '${config.host} must be a valid url.'),
-        assert(config.port == null || (config.port! >= -1 && config.port! <= 65535),
-        '${config.port} must be a number between -1 and 65535. or null.'),
+  })  : assert(Uri.parse(config.host).isAbsolute,
+            '${config.host} must be a valid url.'),
+        assert(
+            config.port == null ||
+                (config.port! >= -1 && config.port! <= 65535),
+            '${config.port} must be a number between -1 and 65535. or null.'),
         responseModels = {
           FetchCountries: FetchCountries.fromJson,
           FetchProvinces: FetchProvinces.fromJson,
@@ -79,9 +94,13 @@ class HttpAlt extends ChangeNotifier {
         client = client ??
             (kIsWeb
                 ? BrowserClient()
-                : IOClient(HttpClient()..connectionTimeout = config.connectionTimeout)),
+                : IOClient(HttpClient()
+                  ..connectionTimeout = config.connectionTimeout)),
         options = config.options ??
-            io.OptionBuilder().disableAutoConnect().disableForceNew().disableForceNewConnection() {
+            io.OptionBuilder()
+                .disableAutoConnect()
+                .disableForceNew()
+                .disableForceNewConnection() {
     if (useSocket && !isSocketInitialized) {
       socket = io.io(
         '${config.host}${config.port != null ? ':${config.port}' : ''}/${config.namespace}',
@@ -183,7 +202,8 @@ class HttpAlt extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<BaseResponse<T>> post<T extends DataModel>(ApiAction<T> action, {
+  Future<BaseResponse<T>> post<T extends DataModel>(
+    ApiAction<T> action, {
     VoidCallback? onStart,
     ValueChanged<BaseResponse<T>>? onSuccess,
     String? languageCode,
@@ -196,9 +216,9 @@ class HttpAlt extends ChangeNotifier {
     CancellationToken? cancellationToken,
   }) async {
     assert(languageCode == null || languageCode.length == 2,
-    'Language must me a 2 character symbol like FA or EN');
+        'Language must me a 2 character symbol like FA or EN');
     assert(action.response != null || responseModels?.containsKey(T) == true,
-    "No response parser available");
+        "No response parser available");
 
     final request = action.request;
     final response = action.response ?? responseModels?[T];
@@ -212,25 +232,27 @@ class HttpAlt extends ChangeNotifier {
     }
 
     Future<BaseResponse<T>> retryClosure() => post<T>(
-      action,
-      languageCode: languageCode,
-      ignoreExpireTime: ignoreExpireTime,
-      showRetry: showRetry,
-      onStart: onStart,
-      headers: headers,
-      encoding: encoding,
-      onSuccess: onSuccess,
-      showProgress: showProgress,
-      requestTimeout: requestTimeout,
-      cancellationToken: cancellationToken,
-    );
+          action,
+          languageCode: languageCode,
+          ignoreExpireTime: ignoreExpireTime,
+          showRetry: showRetry,
+          onStart: onStart,
+          headers: headers,
+          encoding: encoding,
+          onSuccess: onSuccess,
+          showProgress: showProgress,
+          requestTimeout: requestTimeout,
+          cancellationToken: cancellationToken,
+        );
 
     if (onStart != null) onStart();
 
     _showProgress(showProgress);
 
     if (config.useMocks == false) {
-      if (!request.isPublic && request.needCredentials && !ApexApiDb.isAuthenticated) {
+      if (!request.isPublic &&
+          request.needCredentials &&
+          !ApexApiDb.isAuthenticated) {
         logger.w(
             'User not logged in and connection is private and user needs credentials : action (${request.action})');
         return BaseResponse(
@@ -253,8 +275,10 @@ class HttpAlt extends ChangeNotifier {
 
     String? fingerprint = ApexApiDb.getFingerprint();
     if (fingerprint == null) {
-      logger.e('Could not create a valid fingerprint for the user : action (${request.action})');
-      return BaseResponse(error: UnauthorisedException('Could not find user\'s fingerprint!'));
+      logger.e(
+          'Could not create a valid fingerprint for the user : action (${request.action})');
+      return BaseResponse(
+          error: UnauthorisedException('Could not find user\'s fingerprint!'));
     }
 
     final imei = ApexApiDb.getImei();
@@ -262,33 +286,35 @@ class HttpAlt extends ChangeNotifier {
     final additional = ApexApiDb.getAdditional();
 
     request.addParams({
-      if ([1001, 1002, 1003, 1004].contains(request.action)) ...{
+      if (["startAuthentication", "getToken", "setNewPassword", "resetPassword"].contains(request.action)) ...{
         'additional': {
           if (imei != null) 'imei': imei,
           if (imsi != null) 'imsi': imsi,
           if (additional != null) ...additional,
         },
-        if (config.handlerNamespace != null) 'namespace': config.handlerNamespace,
+        if (config.handlerNamespace != null)
+          'namespace': config.handlerNamespace,
       },
       'fingerprint': fingerprint,
       'language': (languageCode ?? config.languageCode).toUpperCase(),
       if (ApexApiDb.isAuthenticated &&
           !request.containsKey('token') &&
-          ![1001, 1002, 1003, 1004].contains(request.action))
+          !["startAuthentication", "getToken", "setNewPassword", "resetPassword"].contains(request.action))
         'token': ApexApiDb.getToken(),
     });
 
     // Try to load action from storage if action has been saved and not expired
     final storageKey = md5
         .convert(utf8.encode(
-        'R_${request.storageUniqueKey != null ? request.storageUniqueKey! : ''}${config.dbVersion}_${request.action}${ApexApiDb.isAuthenticated && !request.isPublic ? (ApexApiDb.getToken() ?? 'pr') : 'pu'}'))
+            'R_${request.storageUniqueKey != null ? request.storageUniqueKey! : ''}${config.dbVersion}_${request.action}${ApexApiDb.isAuthenticated && !request.isPublic ? (ApexApiDb.getToken() ?? 'pr') : 'pu'}'))
         .toString();
     if (!ignoreExpireTime) {
       final storage = StorageUtil.getString(storageKey);
       if (storage != null) {
         try {
           final result = jsonDecode(storage);
-          final isExpired = DateTime.now().millisecondsSinceEpoch > (result['expires_at'] ?? 0);
+          final isExpired = DateTime.now().millisecondsSinceEpoch >
+              (result['expires_at'] ?? 0);
           if (!isExpired) {
             logger.i(
                 'Pre-loading ${request.isPrivate ? 'Private' : 'Public'} action ${request.action}:${response != null ? response.runtimeType : T}');
@@ -326,7 +352,8 @@ class HttpAlt extends ChangeNotifier {
       var requestBody = jsonEncode({
         'os': config.os,
         'private': (request.isPrivate ? 1 : 0),
-        'version': (request.isPrivate ? config.privateVersion : config.publicVersion),
+        'version':
+            (request.isPrivate ? config.privateVersion : config.publicVersion),
         config.namespace: requestMessage
       });
 
@@ -334,27 +361,31 @@ class HttpAlt extends ChangeNotifier {
 
       http.Response httpResponse = await (client != null
           ? client!
-          .post(
-        Uri.parse(url),
-        headers: headers,
-        body: config.enableGzip
-            ? gzip.encode(requestBody.codeUnits)
-            : {'request': requestBody},
-        encoding: encoding ?? Encoding.getByName('utf-8'),
-      )
-          .timeout(requestTimeout ?? config.requestTimeout, onTimeout: config.onTimeout)
-          .asCancellable(cancellationToken)
+              .post(
+                Uri.parse(url),
+                headers: headers,
+                body: config.enableGzip
+                    ? gzip.encode(requestBody.codeUnits)
+                    : {'request': requestBody},
+                encoding: encoding ?? Encoding.getByName('utf-8'),
+              )
+              .timeout(requestTimeout ?? config.requestTimeout,
+                  onTimeout: config.onTimeout)
+              .asCancellable(cancellationToken)
           : http
-          .post(
-        Uri.parse(url),
-        headers: headers,
-        body: config.enableGzip
-            ? gzip.encode(requestBody.codeUnits)
-            : {'request': requestBody},
-        encoding: encoding ?? Encoding.getByName('utf-8'),
-      )
-          .timeout(requestTimeout ?? config.requestTimeout, onTimeout: config.onTimeout)
-          .asCancellable(cancellationToken));
+              .post(
+                Uri.parse(url),
+                headers: headers,
+                body: config.enableGzip
+                    ? gzip.encode(requestBody.codeUnits)
+                    : {'request': requestBody},
+                encoding: encoding ?? Encoding.getByName('utf-8'),
+              )
+              .timeout(requestTimeout ?? config.requestTimeout,
+                  onTimeout: config.onTimeout)
+              .asCancellable(cancellationToken));
+
+      logger.i('RAW Response Body: ${httpResponse.body}');
 
       if (httpResponse.statusCode == 200) {
         String responseMessage;
@@ -381,7 +412,10 @@ class HttpAlt extends ChangeNotifier {
             res.data!['save_local_duration'] > 0) {
           StorageUtil.putString(
             storageKey,
-            jsonEncode(<String, dynamic>{...(res.data ?? {}), 'expires_at': res.expiresAt}),
+            jsonEncode(<String, dynamic>{
+              ...(res.data ?? {}),
+              'expires_at': res.expiresAt
+            }),
           );
         }
         _hideProgress(showProgress);
@@ -390,7 +424,8 @@ class HttpAlt extends ChangeNotifier {
         return res;
       } else {
         logger.e('Status Code: ${httpResponse.statusCode}');
-        exception = ServerErrorException('Response status code is ${httpResponse.statusCode}');
+        exception = ServerErrorException(
+            'Response status code is ${httpResponse.statusCode}');
       }
     } on CancelledException catch (e, stackTrace) {
       logger.i('Cancelled using a token', error: e, stackTrace: stackTrace);
@@ -418,7 +453,9 @@ class HttpAlt extends ChangeNotifier {
         _handleLoginStep(request, res);
       } else {
         _handleMessage(
-            request, BaseResponse<T>(error: exception, errorMessage: exception?.message));
+            request,
+            BaseResponse<T>(
+                error: exception, errorMessage: exception?.message));
       }
     }
 
@@ -426,7 +463,8 @@ class HttpAlt extends ChangeNotifier {
         BaseResponse<T>(error: exception, errorMessage: exception.message));
   }
 
-  Future<BaseResponse<T>> emit<T extends DataModel>(Request request, {
+  Future<BaseResponse<T>> emit<T extends DataModel>(
+    Request request, {
     T Function(Json json)? response,
     VoidCallback? onStart,
     ValueChanged<BaseResponse<T>>? onSuccess,
@@ -443,7 +481,7 @@ class HttpAlt extends ChangeNotifier {
     assert(response != null || responseModels?.containsKey(T) == true);
 
     Future<BaseResponse<T>> retryClosure() => emit<T>(
-      request,
+          request,
           response: response,
           languageCode: languageCode,
           ignoreExpireTime: ignoreExpireTime,
@@ -460,7 +498,9 @@ class HttpAlt extends ChangeNotifier {
     _showProgress(showProgress);
 
     if (config.useMocks == false) {
-      if (!request.isPublic && request.needCredentials && !ApexApiDb.isAuthenticated) {
+      if (!request.isPublic &&
+          request.needCredentials &&
+          !ApexApiDb.isAuthenticated) {
         logger.w(
             'User not logged in and connection is private and user needs credentials : action (${request.action})');
         return BaseResponse(
@@ -473,8 +513,8 @@ class HttpAlt extends ChangeNotifier {
         model: response != null
             ? response(await request.responseMock)
             : (responseModels != null && responseModels!.containsKey(T)
-            ? responseModels![T]!(await request.responseMock) as T
-            : null),
+                ? responseModels![T]!(await request.responseMock) as T
+                : null),
       );
       _hideProgress(showProgress);
       _handleMessage(request, res);
@@ -486,40 +526,43 @@ class HttpAlt extends ChangeNotifier {
 
     String? fingerprint = ApexApiDb.getFingerprint();
     if (fingerprint == null) {
-      return BaseResponse(error: UnauthorisedException('Could not find user\'s fingerprint!'));
+      return BaseResponse(
+          error: UnauthorisedException('Could not find user\'s fingerprint!'));
     }
 
     final imei = ApexApiDb.getImei();
     final imsi = ApexApiDb.getImsi();
     final additional = ApexApiDb.getAdditional();
     request.addParams({
-      if ([1001, 1002, 1003, 1004].contains(request.action)) ...{
+      if (["startAuthentication", "getToken", "setNewPassword", "resetPassword"].contains(request.action)) ...{
         'additional': {
           if (imei != null) 'imei': imei,
           if (imsi != null) 'imsi': imsi,
           if (additional != null) ...additional,
         },
-        if (config.handlerNamespace != null) 'namespace': config.handlerNamespace,
+        if (config.handlerNamespace != null)
+          'namespace': config.handlerNamespace,
       },
       'fingerprint': fingerprint,
       'language': (languageCode ?? config.languageCode).toUpperCase(),
       if (ApexApiDb.isAuthenticated &&
           !request.containsKey('token') &&
-          ![1001, 1002, 1003, 1004].contains(request.action))
+          !["startAuthentication", "getToken", "setNewPassword", "resetPassword"].contains(request.action))
         'token': ApexApiDb.getToken(),
     });
 
     // Try to load action from storage if action has been saved and not expired
     final storageKey = md5
         .convert(utf8.encode(
-        'R_${request.storageUniqueKey != null ? request.storageUniqueKey! : ''}${config.dbVersion}_${request.action}${ApexApiDb.isAuthenticated && !request.isPublic ? (ApexApiDb.getToken() ?? 'pr') : 'pu'}'))
+            'R_${request.storageUniqueKey != null ? request.storageUniqueKey! : ''}${config.dbVersion}_${request.action}${ApexApiDb.isAuthenticated && !request.isPublic ? (ApexApiDb.getToken() ?? 'pr') : 'pu'}'))
         .toString();
     if (!ignoreExpireTime) {
       final storage = StorageUtil.getString(storageKey);
       if (storage != null) {
         try {
           final result = jsonDecode(storage);
-          final isExpired = DateTime.now().millisecondsSinceEpoch > (result['expires_at'] ?? 0);
+          final isExpired = DateTime.now().millisecondsSinceEpoch >
+              (result['expires_at'] ?? 0);
           if (!isExpired) {
             logger.i(
                 'Pre-loading ${request.isPrivate ? 'Private' : 'Public'} action ${request.action}:${response != null ? response.runtimeType : T}');
@@ -529,8 +572,8 @@ class HttpAlt extends ChangeNotifier {
               model: response != null
                   ? response(result ?? {'success': -1})
                   : (responseModels != null && responseModels!.containsKey(T)
-                  ? responseModels![T]!(result ?? {'success': -1}) as T
-                  : null),
+                      ? responseModels![T]!(result ?? {'success': -1}) as T
+                      : null),
             );
             if (onSuccess != null) onSuccess(res);
             logger.i(res.toString());
@@ -560,12 +603,13 @@ class HttpAlt extends ChangeNotifier {
       var requestBody = jsonEncode({
         'os': config.os,
         'private': (request.isPrivate ? 1 : 0),
-        'version': (request.isPrivate ? config.privateVersion : config.publicVersion),
+        'version':
+            (request.isPrivate ? config.privateVersion : config.publicVersion),
         'data': requestMessage
       });
 
-      res = await emitWithFutureAck<T>(
-          crypto, request, requestBody, response, storageKey, onSuccess, onError, showProgress);
+      res = await emitWithFutureAck<T>(crypto, request, requestBody, response,
+          storageKey, onSuccess, onError, showProgress);
     } on FormatException catch (e, stackTrace) {
       logger.e('Could not resolve json format parsing!',
           error: e, stackTrace: stackTrace);
@@ -589,11 +633,14 @@ class HttpAlt extends ChangeNotifier {
         _handleLoginStep(request, res);
       } else {
         _handleMessage(
-            request, BaseResponse<T>(error: exception, errorMessage: exception?.message));
+            request,
+            BaseResponse<T>(
+                error: exception, errorMessage: exception?.message));
       }
     }
 
-    return _handleRetry<T>(showRetry, retryClosure, BaseResponse<T>(error: exception));
+    return _handleRetry<T>(
+        showRetry, retryClosure, BaseResponse<T>(error: exception));
   }
 
   Future<BaseResponse<DM>> subscribePublic<DM extends DataModel>(String event,
@@ -603,16 +650,19 @@ class HttpAlt extends ChangeNotifier {
       try {
         final json = jsonDecode(data);
         if (!completer.isCompleted) {
-          final res = BaseResponse(data: json, model: responseModels![DM]!(json) as DM);
+          final res =
+              BaseResponse(data: json, model: responseModels![DM]!(json) as DM);
           if (onSuccess != null) {
             onSuccess(res);
           }
           completer.complete(res);
         }
       } on FormatException {
-        completer.completeError(ServerErrorException('Could not parse server response!'));
+        completer.completeError(
+            ServerErrorException('Could not parse server response!'));
       } catch (e) {
-        completer.completeError(ServerErrorException('Something went wrong $e'));
+        completer
+            .completeError(ServerErrorException('Something went wrong $e'));
       }
     });
     return completer.future;
@@ -628,7 +678,8 @@ class HttpAlt extends ChangeNotifier {
     return completer.future;
   }
 
-  Future<bool> join<DM extends DataModel>(JoinGroupRequest joinRequest, {
+  Future<bool> join<DM extends DataModel>(
+    JoinGroupRequest joinRequest, {
     VoidCallback? onStart,
     StreamSocket<BaseResponse<DM>>? stream,
     SocketJoinController<BaseResponse<DM>>? controller,
@@ -671,7 +722,8 @@ class HttpAlt extends ChangeNotifier {
           }
         } else {
           return Future.error(
-            response.error ?? ServerErrorException('Could not join to desired groupName.'),
+            response.error ??
+                ServerErrorException('Could not join to desired groupName.'),
           );
         }
       }
@@ -682,7 +734,8 @@ class HttpAlt extends ChangeNotifier {
     }
   }
 
-  Future<BaseResponse<T>> uploadFile<T extends DataModel>(Request request, {
+  Future<BaseResponse<T>> uploadFile<T extends DataModel>(
+    Request request, {
     String? fileName,
     String fileKey = 'file',
     String? filePath,
@@ -701,40 +754,41 @@ class HttpAlt extends ChangeNotifier {
   }) async {
     assert(languageCode == null || languageCode.length == 2);
     assert(response != null || responseModels?.containsKey(T) == true,
-    'Provide a [response] or add your response parser to [responseModels] in ApiWrapper');
+        'Provide a [response] or add your response parser to [responseModels] in ApiWrapper');
     if (onStart != null) onStart();
 
     Future<BaseResponse<T>> retryClosure() => uploadFile<T>(
-      request,
-      response: response,
-      languageCode: languageCode,
-      ignoreExpireTime: ignoreExpireTime,
-      showRetry: showRetry,
-      onStart: onStart,
-      headers: headers,
-      encoding: encoding,
-      onSuccess: onSuccess,
-      showProgress: showProgress,
-      filePath: filePath,
-      fileName: fileName,
-      blobData: blobData,
-      onProgress: onProgress,
-      cancelToken: cancelToken,
-      fileKey: fileKey,
-    );
+          request,
+          response: response,
+          languageCode: languageCode,
+          ignoreExpireTime: ignoreExpireTime,
+          showRetry: showRetry,
+          onStart: onStart,
+          headers: headers,
+          encoding: encoding,
+          onSuccess: onSuccess,
+          showProgress: showProgress,
+          filePath: filePath,
+          fileName: fileName,
+          blobData: blobData,
+          onProgress: onProgress,
+          cancelToken: cancelToken,
+          fileKey: fileKey,
+        );
 
     _showProgress(showProgress);
 
     String? fingerprint = ApexApiDb.getFingerprint();
     if (fingerprint == null) {
-      return BaseResponse(error: UnauthorisedException('Could not find user\'s fingerprint!'));
+      return BaseResponse(
+          error: UnauthorisedException('Could not find user\'s fingerprint!'));
     }
 
     final imei = ApexApiDb.getImei();
     final imsi = ApexApiDb.getImsi();
     final additional = ApexApiDb.getAdditional();
     request.addParams({
-      if ([1001, 1002, 1003, 1004].contains(request.action)) ...{
+      if (["startAuthentication", "getToken", "setNewPassword", "resetPassword"].contains(request.action)) ...{
         'additional': {
           if (imei != null) 'imei': imei,
           if (imsi != null) 'imsi': imsi,
@@ -753,7 +807,7 @@ class HttpAlt extends ChangeNotifier {
     var req = FileRequest(
       request.method.name,
       Uri.parse(request.handlerUrl ?? (currentHost ?? config.host)),
-          (bytes, totalBytes) {
+      (bytes, totalBytes) {
         if (onProgress != null) onProgress(bytes / totalBytes);
       },
       config.connectionTimeout,
@@ -761,7 +815,8 @@ class HttpAlt extends ChangeNotifier {
 
     if (blobData != null) {
       req.files.add(http.MultipartFile.fromBytes(fileKey, blobData,
-          contentType: MediaType('application', 'octet-stream'), filename: fileName));
+          contentType: MediaType('application', 'octet-stream'),
+          filename: fileName));
     }
 
     if (filePath != null) {
@@ -774,7 +829,8 @@ class HttpAlt extends ChangeNotifier {
 
     req.fields['request'] = jsonEncode({
       'os': config.os,
-      'version': request.isPublic ? config.publicVersion : config.privateVersion,
+      'version':
+          request.isPublic ? config.publicVersion : config.privateVersion,
       'private': request.isPublic ? 0 : 1,
       config.namespace: requestMessage
     });
@@ -796,14 +852,17 @@ class HttpAlt extends ChangeNotifier {
             data: jsonResponse,
             model: response != null
                 ? response(jsonResponse)
-                : (responseModels != null ? responseModels![T]!(jsonResponse) as T : null),
+                : (responseModels != null
+                    ? responseModels![T]!(jsonResponse) as T
+                    : null),
           );
           if (onSuccess != null) onSuccess(res);
           _handleMessage(request, res);
           return res;
         } on FormatException catch (e, stackTrace) {
           logger.e('Response Parse Error!', error: e, stackTrace: stackTrace);
-          exception = ResponseParseException('Could not parse server uploadResponse! wanna retry?');
+          exception = ResponseParseException(
+              'Could not parse server uploadResponse! wanna retry?');
         }
       } else {
         logger.e('Status Code: ${uploadResponse.statusCode}');
@@ -813,10 +872,12 @@ class HttpAlt extends ChangeNotifier {
       }
     } catch (e) {
       _hideProgress(showProgress);
-      exception = ServerException(message: 'Could not receive server uploadResponse!', code: '-1');
+      exception = ServerException(
+          message: 'Could not receive server uploadResponse!', code: '-1');
     }
 
-    return _handleRetry(showRetry, retryClosure, BaseResponse(error: exception));
+    return _handleRetry(
+        showRetry, retryClosure, BaseResponse(error: exception));
   }
 
   Future<String> _encrypt(Crypto crypto, Request request) async {
@@ -851,7 +912,7 @@ class HttpAlt extends ChangeNotifier {
             barrierDismissible: false,
             useRootNavigator: true,
             builder: (context) =>
-            progressWidget ??
+                progressWidget ??
                 Center(
                   child: Container(
                     decoration: BoxDecoration(
@@ -895,11 +956,13 @@ class HttpAlt extends ChangeNotifier {
     }
   }
 
-  Future<BaseResponse<T>> _handleRetry<T extends DataModel>(bool showRetry,
-      Future<BaseResponse<T>> Function() retryClosure, BaseResponse<T> placeholder) async {
+  Future<BaseResponse<T>> _handleRetry<T extends DataModel>(
+      bool showRetry,
+      Future<BaseResponse<T>> Function() retryClosure,
+      BaseResponse<T> placeholder) async {
     Completer<BaseResponse<T>> completer = Completer<BaseResponse<T>>();
-    if (showRetry && retryBuilder != null) {
-      if (!isRetryShowing) {
+    if (showRetry) {
+      if (!isRetryShowing && retryBuilder != null) {
         await showDialog(
           context: navKey.currentContext!,
           barrierDismissible: false,
@@ -910,6 +973,16 @@ class HttpAlt extends ChangeNotifier {
         if (!completer.isCompleted) {
           completer.completeError('Could Not Complete Retry Cycle!');
         }
+      } else {
+        if (onRetry != null) {
+          onRetry!(() {
+            completer.complete(retryClosure());
+          }, () {
+            if (!completer.isCompleted) {
+              completer.completeError('Could Not Complete Retry Cycle!');
+            }
+          });
+        }
       }
     } else {
       completer.complete(placeholder);
@@ -917,8 +990,15 @@ class HttpAlt extends ChangeNotifier {
     return completer.future;
   }
 
-  Future<BaseResponse<T>> emitWithFutureAck<T extends DataModel>(crypto, request, requestBody,
-      response, storageKey, onSuccess, OnConnectionError? onError, showProgress) {
+  Future<BaseResponse<T>> emitWithFutureAck<T extends DataModel>(
+      crypto,
+      request,
+      requestBody,
+      response,
+      storageKey,
+      onSuccess,
+      OnConnectionError? onError,
+      showProgress) {
     Completer<BaseResponse<T>> completer = Completer<BaseResponse<T>>();
 
     socket.emitWithAck(config.eventName, requestBody, ack: (m) {
@@ -940,8 +1020,8 @@ class HttpAlt extends ChangeNotifier {
           model: response != null
               ? response(decodedResponse)
               : (responseModels != null && responseModels!.containsKey(T)
-              ? responseModels![T]!(decodedResponse) as T
-              : null),
+                  ? responseModels![T]!(decodedResponse) as T
+                  : null),
         );
 
         // Save response to storage if it has save_local_duration parameter
@@ -950,7 +1030,10 @@ class HttpAlt extends ChangeNotifier {
             res.data!['save_local_duration'] > 0) {
           StorageUtil.putString(
             storageKey,
-            jsonEncode(<String, dynamic>{...(res.data ?? {}), 'expires_at': res.expiresAt}),
+            jsonEncode(<String, dynamic>{
+              ...(res.data ?? {}),
+              'expires_at': res.expiresAt
+            }),
           );
         }
         _hideProgress(showProgress);
@@ -963,7 +1046,8 @@ class HttpAlt extends ChangeNotifier {
               errorMessage: 'Could not parse the response: $m'));
         }
         if (onError != null) {
-          onError(ResponseParseException('Could not parse the response: $m'), e);
+          onError(
+              ResponseParseException('Could not parse the response: $m'), e);
         }
       } catch (e) {
         if (onError != null) {

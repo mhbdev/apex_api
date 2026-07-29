@@ -50,45 +50,46 @@ class ApexApiWrapper extends StatelessWidget {
             },
             loginStepHandler: onLoginStepChanged,
             responseModels: responseModels,
-            retryBuilder: (context, retry) {
-              if (onRetry != null) {
-                onRetry!(retry);
-              }
-              return PopScope(
-                canPop: true,
-                child: CupertinoAlertDialog(
-                  // elevation: 1.0,
-                  title: const Text('Something went wrong!',
-                      style: TextStyle(
-                          color: Colors.red, fontWeight: FontWeight.bold, fontFamily: 'Vazir')),
-                  content: const Text(
-                    'Connection error occurred',
-                    style: TextStyle(fontFamily: 'Vazir'),
-                  ),
-                  actions: <Widget>[
-                    CupertinoDialogAction(
-                      onPressed: () {
-                        Navigator.of(context, rootNavigator: true).pop();
-                        retry();
-                      },
-                      child: const Text(
-                        'Retry',
-                        style: TextStyle(fontFamily: 'Vazir'),
-                      ),
-                    ),
-                    CupertinoDialogAction(
-                      onPressed: () {
-                        Navigator.of(context, rootNavigator: true).pop();
-                      },
-                      child: const Text(
-                        'Cancel',
-                        style: TextStyle(fontFamily: 'Vazir'),
-                      ),
-                    ),
-                  ],
-                ),
-              );
-            },
+            onRetry: onRetry,
+            // retryBuilder: (context, retry) {
+            //   if (onRetry != null) {
+            //     onRetry!(retry);
+            //   }
+            //   return PopScope(
+            //     canPop: true,
+            //     child: CupertinoAlertDialog(
+            //       // elevation: 1.0,
+            //       title: const Text('Something went wrong!',
+            //           style: TextStyle(
+            //               color: Colors.red, fontWeight: FontWeight.bold, fontFamily: 'Vazir')),
+            //       content: const Text(
+            //         'Connection error occurred',
+            //         style: TextStyle(fontFamily: 'Vazir'),
+            //       ),
+            //       actions: <Widget>[
+            //         CupertinoDialogAction(
+            //           onPressed: () {
+            //             Navigator.of(context, rootNavigator: true).pop();
+            //             retry();
+            //           },
+            //           child: const Text(
+            //             'Retry',
+            //             style: TextStyle(fontFamily: 'Vazir'),
+            //           ),
+            //         ),
+            //         CupertinoDialogAction(
+            //           onPressed: () {
+            //             Navigator.of(context, rootNavigator: true).pop();
+            //           },
+            //           child: const Text(
+            //             'Cancel',
+            //             style: TextStyle(fontFamily: 'Vazir'),
+            //           ),
+            //         ),
+            //       ],
+            //     ),
+            //   );
+            // },
           ),
         ),
         ChangeNotifierProvider(

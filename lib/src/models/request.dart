@@ -12,7 +12,7 @@ abstract class Request extends Equatable {
   final String? groupName;
   final bool isPublic;
   final bool needCredentials;
-  final int action;
+  final dynamic action;
   final bool? encrypt;
   final bool isEmpty;
   final String? storageUniqueKey;
@@ -88,14 +88,14 @@ abstract class Request extends Equatable {
     Json finalResult;
     finalResult = !isEmpty
         ? ({
-            'action': action,
+            'action': action.toString(),
             if (groupName != null && isPublic) 'group_name': groupName,
           }
           ..addAll(await json)
           ..addAll(_finalJson))
         : {};
 
-    if (!isEmpty && ![1001, 1002, 1003, 1004].contains(action)) {
+    if (!isEmpty && !["startAuthentication", "getToken", "setNewPassword", "resetPassword"].contains(action)) {
       final token = StorageUtil.getString('apex_api_token');
       if (!finalResult.containsKey('token')) {
         if (token != null) finalResult.addAll({'token': token});
@@ -194,7 +194,7 @@ class SimpleRequest extends Request {
       );
 
   SimpleRequest(
-    int action, {
+    dynamic action, {
     this.data,
     this.responseMockData,
     bool isPublic = false,

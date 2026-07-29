@@ -29,7 +29,7 @@ class ApiConfig extends Equatable {
     this.dbVersion = '1',
     this.options,
     this.port,
-    this.logLevel = Level.debug,
+    this.logLevel = Level.all,
     this.uploadTimeout = const Duration(minutes: 5),
     this.requestTimeout = const Duration(seconds: 30),
     this.connectionTimeout = const Duration(seconds: 10),

@@ -31,4 +31,4 @@ typedef RetryBuilder = Widget Function(
 
 typedef OnLoginStepChanged = ValueChanged<LoginStep>;
 typedef OnMessage = Future<bool> Function(Request request, BaseResponse response);
-typedef OnRetry = void Function(VoidCallback retry);
+typedef OnRetry = void Function(VoidCallback retry, VoidCallback? cancel);

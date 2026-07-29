@@ -1,6 +1,13 @@
 import '../../apex_api.dart';
 
-enum LoginStep { showUsername, showOtp, showPassword, showUpgrade, failure, success }
+enum LoginStep {
+  showUsername,
+  showOtp,
+  showPassword,
+  showUpgrade,
+  failure,
+  success
+}
 
 class BaseResponse<DM extends DataModel> {
   final int? success;
@@ -23,13 +30,12 @@ class BaseResponse<DM extends DataModel> {
   LoginStep get loginStep {
     switch (success) {
       case -6:
-        return LoginStep.showUpgrade;
-      case -4:
         return LoginStep.showOtp;
+      case -4:
+        return LoginStep.showUsername;
       case -5:
         return LoginStep.showPassword;
-      case -3:
-        return LoginStep.showUsername;
+      // TODO: handle update state
       case -1:
         return LoginStep.failure;
       default:
@@ -41,10 +47,13 @@ class BaseResponse<DM extends DataModel> {
       : success = JsonChecker.optInt(data, 'success'),
         message = JsonChecker.optString(data, 'message', defValue: null),
         expiresAt = DateTime.now().millisecondsSinceEpoch +
-            Duration(seconds: JsonChecker.optInt(data, 'save_local_duration', defValue: 0)!)
+            Duration(
+                    seconds: JsonChecker.optInt(data, 'save_local_duration',
+                        defValue: 0)!)
                 .inMilliseconds {
     if (data != null && data!.containsKey('is_logged_in')) {
-      bool saveLocal = JsonChecker.optInt(data, 'save_local_duration', defValue: 0)! > 0;
+      bool saveLocal =
+          JsonChecker.optInt(data, 'save_local_duration', defValue: 0)! > 0;
       if (!saveLocal && data!['is_logged_in'] == 0) {
         ApexApiDb.removeToken();
         // TODO : clear database notify user

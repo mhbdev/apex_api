@@ -23,7 +23,7 @@ class DetectUserRequest extends Request {
 
   DetectUserRequest._(this.username,
       {this.countryCode, this.mockResponse, this.useLatestVersion = true})
-      : super(1001, isPublic: false);
+      : super("startAuthentication", isPublic: false);
 
   @override
   Future<Json> get json async => {
@@ -63,7 +63,7 @@ class LoginRequest extends Request {
 
   LoginRequest._(this.username, this.password,
       {this.countryCode, this.mockResponse, this.useLatestVersion = true})
-      : super(1002, isPublic: false);
+      : super("getToken", isPublic: false);
 
   @override
   Future<Json> get json async => {
@@ -124,7 +124,7 @@ class VerifyUserRequest extends Request {
 
   VerifyUserRequest._(this.username, this.password, this.otp,
       {this.countryCode, this.mockResponse, this.useLatestVersion = true})
-      : super(1003, isPublic: false);
+      : super("setNewPassword", isPublic: false);
 
   @override
   Future<Json> get json async => {
@@ -167,7 +167,7 @@ class ForgotPasswordRequest extends Request {
 
   ForgotPasswordRequest._(this.username,
       {this.countryCode, this.mockResponse, this.useLatestVersion = true})
-      : super(1004, isPublic: false);
+      : super("resetPassword", isPublic: false);
 
   @override
   Future<Json> get json async => {
